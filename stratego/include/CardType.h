@@ -1,0 +1,13 @@
+//
+// Created by apha on 2017.11.07..
+//
+
+#ifndef STRATEGO_CARDTYPE_H
+#define STRATEGO_CARDTYPE_H
+
+enum class CardType {
+    FLAG, BOMB, SPY, SCOUT, MINER, SARGEANT, LIEUTENANT, CAPTAIN, MAJOR, COLONEL, GENERAL, MARSHALL
+};
+
+
+#endif //STRATEGO_CARDTYPE_H
