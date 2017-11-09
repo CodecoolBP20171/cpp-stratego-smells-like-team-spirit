@@ -17,18 +17,25 @@ public:
     Game();
     ~Game() = default;
     void start();
-    void init();
-    void loop();
-    void moveCard(Field from, Field destination);
-    void resolveAttack(Card attacker, Card defender);
+
+    //Init
+    void populateCardArea();
+    void placeCard();
+
+    //Main Game Loop
+    void setMove();
+    void hideCardsDuringTransition();
+    void moveCard();
 
 
 
 
 private:
-    GameState state;
-    std::vector<std::vector<Field>> gameArea; //TODO can be static array? The number of fields should be fixed
-    std::vector<std::vector<Field>> cardArea; //For the cards initially, then during the game discarded cards get here.
+    Field source;
+    Field destination;
+    GameState gameState;
+    std::array<std::array<Field, 10>, 10> gameArea; //TODO can be static array? The number of fields should be fixed
+    std::array<std::array<Field, 5>, 8> cardArea; //For the cards initially, then during the game discarded cards get here.
 };
 
 

@@ -5,24 +5,30 @@
 #include "Game.h"
 
 void Game::start() {
-    //TODO Check the game state and act accordingly
-    //TODO If Init phase -> call init()
-    //TODO Loop -> while it is the loop phase, keep looping until it changes
-    //TODO Game over -> ask if restart?
-    //TODO if exit, return to main
+    //TODO contains main loop, starts with clearing screen, checking gameState and variables and rendering screen accordingly.
 }
 
-void Game::init() {
-    //TODO Generate cards for player 1 in the side area and wait until all cards are placed on the game area
-    //TODO same for player 2 as above
+void Game::populateCardArea() {
+    //TODO Checks gameState to see which player's cards need to be created
+    //TODO Loops through all cardTypes and adds the corresponding amount of copies of them to the card area.
 }
 
-void Game::loop() {
-    //TODO Start the game loop and loop as long as the game state equals IN_PROGRESS
-    //TODO Each loop the current player (which alternates) clicks a card and chooses a destination
-    //TODO Is the move valid? -> Handle the chosen move
+void Game::placeCard() {
+    //TODO Used in the init phase. Highlights field, chooses Destination and performs the placement of card from card area to game area.
 }
 
-void Game::moveCard(Field from, Field destination) {
-
+void Game::setMove() {
+    //TODO Used to set the source and the destination for a move.
 }
+
+void Game::moveCard() {
+    //TODO Used for performing the move from the source field to the destination field
+}
+
+void Game::hideCardsDuringTransition() {
+    //TODO checks if the destination contains a card. If yes, then that means the move was an attack so show attacker and defender but face everything else down.
+    //TODO If destination was empty, then face down all cards.
+}
+
+
+
