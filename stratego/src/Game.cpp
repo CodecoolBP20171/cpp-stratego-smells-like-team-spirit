@@ -2,7 +2,7 @@
 // Created by apha on 2017.11.07..
 //
 
-#include "../include/Game.h"
+#include "Game.h"
 
 void Game::start() {
     //TODO Check the game state and act accordingly
