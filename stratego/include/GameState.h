@@ -7,7 +7,16 @@
 
 
 enum class GameState {
-    INIT, IN_PROGRESS, GAME_OVER, EXIT
+    //Init phase states
+    BLUE_INIT_START, BLUE_INIT_IN_PROGRESS, RED_INIT_START, RED_INIT_IN_PROGRESS,
+
+    //Game loop states
+    BLUE_MOVE_IN_PROGRESS, WAITING_FOR_RED, RED_MOVE_IN_PROGRESS, WAITING_FOR_BLUE,
+
+    //Game over states
+    BLUE_WINS, RED_WINS,
+
+    EXIT
 };
 
 

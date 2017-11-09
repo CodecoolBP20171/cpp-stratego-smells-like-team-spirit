@@ -20,5 +20,9 @@ void Game::init() {
 void Game::loop() {
     //TODO Start the game loop and loop as long as the game state equals IN_PROGRESS
     //TODO Each loop the current player (which alternates) clicks a card and chooses a destination
-    //TODO Handle the chosen move
+    //TODO Is the move valid? -> Handle the chosen move
+}
+
+void Game::moveCard(Field from, Field destination) {
+
 }

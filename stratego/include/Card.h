@@ -13,6 +13,8 @@ public:
 
 private:
     CardType cardType;
+    //Color? Owner?
+    bool canDefeat(CardType target);
     unsigned char moveDistance; // chose char to be small;
 };
 
