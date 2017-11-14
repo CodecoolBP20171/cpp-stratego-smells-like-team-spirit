@@ -6,6 +6,15 @@
 
 void Game::start() {
     //TODO contains main loop, starts with clearing screen, checking gameState and variables and rendering screen accordingly.
+    gameState = GameState::BLUE_INIT_START;
+    display = std::unique_ptr<Display>(new Display());
+    display->init("testing window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
+    while(display->running()) {
+        display->handleEvents();
+        display->update();
+        display->render();
+    }
+    display->clean();
 }
 
 void Game::populateCardArea() {

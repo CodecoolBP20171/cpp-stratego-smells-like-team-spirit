@@ -10,11 +10,12 @@
 #include "Field.h"
 #include "Coordinate.h"
 #include "GameState.h"
+#include "Display.h"
 
 class Game {
 
 public:
-    Game();
+    Game() = default;
     ~Game() = default;
     void start();
 
@@ -33,6 +34,7 @@ public:
 private:
     Field source;
     Field destination;
+    std::unique_ptr<Display> display;
     GameState gameState;
     std::array<std::array<Field, 10>, 10> gameArea; //TODO can be static array? The number of fields should be fixed
     std::array<std::array<Field, 5>, 8> cardArea; //For the cards initially, then during the game discarded cards get here.

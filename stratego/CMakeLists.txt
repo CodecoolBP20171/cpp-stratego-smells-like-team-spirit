@@ -4,7 +4,7 @@ project(stratego)
 set(CMAKE_CXX_STANDARD 11)
 
 find_package(SDL2 REQUIRED)
-include_directories(src include ${SDL2_INCLUDE_DIRS})
+include_directories(src include assets ${SDL2_INCLUDE_DIRS})
 
 INCLUDE(FindPkgConfig)
 PKG_SEARCH_MODULE(SDL2IMAGE REQUIRED SDL2_image>=2.0.0)
@@ -22,7 +22,7 @@ set(SOURCE_FILES
         src/Field.cpp
         src/Game.cpp
         src/GameState.cpp
-        main.cpp)
+        main.cpp src/Display.cpp include/Display.h)
 
 add_executable(stratego ${SOURCE_FILES})
 
