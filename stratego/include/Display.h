@@ -19,15 +19,19 @@ public:
     void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
     void handleEvents();
     void update();
-    void render(std::vector<std::vector<std::unique_ptr<Field>>> gameArea);
+    void render();
+    void renderPresent();
     void clean();
     bool running();
+    void renderField(int x, int y, bool highlighted);
+    void renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard);
+    void renderField(int x, int y, bool highlighted, Color cardBackColor);
+    SDL_Renderer* renderer;
+    SDL_Texture* background;
 
 private:
     bool isRunning;
-    SDL_Texture* background;
     SDL_Window* window;
-    SDL_Renderer* renderer;
     Assets assets;
 
 };

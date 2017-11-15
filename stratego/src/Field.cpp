@@ -45,4 +45,3 @@ void Field::highlight() {
 void Field::unhighlight() {
     isHighlighted = false;
 }
-

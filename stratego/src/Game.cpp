@@ -32,18 +32,24 @@ void Game::start() {
     //if(testCard == nullptr) {
     //    std::cout << "test card is nullptr" << std::endl;
     //} else {
-    //    std::cout << "test card type: " << static_cast<int>(testCard->getType())<<std::endl;
+    //    std::cout << "test card TYPE: " << static_cast<int>(testCard->getType())<<std::endl;
     //}
     //if(testingField.getContent() == nullptr) {
     //    std::cout << "field content is nullptr" << std::endl;
     //}
 
     display = std::unique_ptr<Display>(new Display());
-    display->init("testing window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
+    display->init("Stratego", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
     while(display->running()) {
         display->handleEvents();
         display->update();
-        display->render(std::move(gameArea));
+        display->render();
+        renderGameArea();
+        renderCardArea();
+        if(gameState == GameState::BLUE_INIT_START) {
+            populateCardArea();
+        }
+        display->renderPresent();
     }
     display->clean();
 }
@@ -51,6 +57,16 @@ void Game::start() {
 void Game::populateCardArea() {
     //TODO Checks gameState to see which player's cards need to be created
     //TODO Loops through all cardTypes and adds the corresponding amount of copies of them to the card area.
+    for (int i = 0; i < 10; ++i) {
+        std::unique_ptr<Card> testCard = std::unique_ptr<CardBomb>(new CardBomb(Color::BLUE));
+        testCard->setIsFaceDown(true);
+        for (int j = 0; j < cardArea.size() ; ++j) {
+            if(cardArea[j]->getContent() == nullptr) {
+                cardArea[j]->placeCard(std::move(testCard));
+            }
+        }
+    }
+    gameState = GameState::BLUE_INIT_IN_PROGRESS;
 }
 
 void Game::placeCard() {
@@ -73,25 +89,74 @@ void Game::hideCardsDuringTransition() {
 Game::Game() {
     gameState = GameState::BLUE_INIT_START;
     initGameArea();
+    initCardArea();
 }
 
 void Game::initGameArea() {
     size_t x, y;
     for (int i = 0; i < 10; ++i) {
         y = 10 + 50 * static_cast<size_t >(i);
-        std::vector<std::unique_ptr<Field>> rowOfFields;
         for (int j = 0; j < 10; ++j) {
             x = 10 + 50 * static_cast<size_t>(j);
             std::unique_ptr<Field> newField = std::unique_ptr<Field>(new Field(x, y, true));
-            rowOfFields.emplace_back(std::move(newField));
+            gameArea.emplace_back(std::move(newField));
         }
-        gameArea.emplace_back(std::move(rowOfFields));
+    }
+    //Setting all fields to highlighted for testing
+    for (int k = 0; k < gameArea.size(); k++) {
+            gameArea[k]->highlight();
+        }
+    }
+
+
+void Game::initCardArea() {
+    size_t x, y;
+    for (int i = 0; i < 8; ++i) {
+        y = 110 + 50 * static_cast<size_t >(i);
+        for (int j = 0; j < 5; ++j) {
+            x = 520 + 50 * static_cast<size_t>(j);
+            std::unique_ptr<Field> newField = std::unique_ptr<Field>(new Field(x, y, true));
+            cardArea.emplace_back(std::move(newField));
+        }
     }
 
     //Testing if they exist and if highlight works
-    for (int k = 0; k < gameArea.size(); ++k) {
-        for (int i = 0; i < gameArea[k].size(); ++i) {
-            gameArea[k][i]->highlight();
+    for (int k = 0; k < cardArea.size(); k+=3) {
+            cardArea[k]->highlight();
+    }
+}
+
+void Game::renderGameArea() {
+    for (int i = 0; i < gameArea.size(); ++i) {
+        int fieldX = gameArea[i]->getX();
+        int fieldY = gameArea[i]->getY();
+        bool highlighted = gameArea[i]->getIsHighlighted();
+        if(gameArea[i]->getContent() == nullptr) {
+            display->renderField(fieldX, fieldY, highlighted);
+        } else {
+            if(!gameArea[i]->getContent()->getIsFaceDown()){
+                Color color = gameArea[i]->getContent()->getColor();
+                display->renderField(fieldX, fieldY, highlighted, color);
+            } else {
+                Color color = gameArea[i]->getContent()->getColor();
+                CardType type = gameArea[i]->getContent()->getType();
+                display->renderField(fieldX, fieldY, highlighted, color, type);
+            }
+        }
+    }
+}
+
+void Game::renderCardArea() {
+    for (int i = 0; i < cardArea.size(); ++i) {
+        int fieldX = cardArea[i]->getX();
+        int fieldY = cardArea[i]->getY();
+        bool highlighted = cardArea[i]->getIsHighlighted();
+        if(cardArea[i]->getContent() == nullptr) {
+            display->renderField(fieldX, fieldY, highlighted);
+        } else {
+            Color color = cardArea[i]->getContent()->getColor();
+            CardType type = cardArea[i]->getContent()->getType();
+            display->renderField(fieldX, fieldY, highlighted, color, type);
         }
     }
 }

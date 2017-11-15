@@ -67,3 +67,4 @@ SDL_Rect *Assets::getTexturePosition(CardType type, Color color) {
 SDL_Rect *Assets::getUIElement(UIElement elementName) {
     return &UIElements[elementName];
 }
+

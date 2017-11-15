@@ -28,8 +28,6 @@ struct CardAsset{
     SDL_Rect textureInAtlas;
 };
 
-    CardAsset blueB;
-    CardAsset redFlag;
     std::vector<CardAsset> cardAssets;
     std::map<UIElement, SDL_Rect> UIElements;
 };

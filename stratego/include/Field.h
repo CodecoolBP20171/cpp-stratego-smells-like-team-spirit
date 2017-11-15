@@ -8,6 +8,7 @@
 
 #include <bits/unique_ptr.h>
 #include "Card.hpp"
+#include "Display.h"
 
 class Field {
 public:
@@ -26,6 +27,7 @@ public:
     void placeCard(std::unique_ptr<Card> cardToPlace);
     void highlight();
     void unhighlight();
+
 
 private:
     size_t x;

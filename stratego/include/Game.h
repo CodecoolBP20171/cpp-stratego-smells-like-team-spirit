@@ -33,13 +33,22 @@ public:
 
 
 private:
+
+    //Game init
     void initGameArea();
+    void initCardArea();
+
+    //Rendering
+    void renderGameArea();
+    void renderCardArea();
+
     //Field source;
     //Field destination;
     std::unique_ptr<Display> display;
     GameState gameState;
-    std::vector<std::vector<std::unique_ptr<Field>>> gameArea; //TODO can be static array? The number of fields should be fixed
-    //std::array<std::array<Field, 5>, 8> cardArea; //For the cards initially, then during the game discarded cards get here.
+    std::vector<std::unique_ptr<Field>> gameArea;
+    //std::vector<std::vector<std::unique_ptr<Field>>> cardArea;
+    std::vector<std::unique_ptr<Field>> cardArea;
 };
 
 

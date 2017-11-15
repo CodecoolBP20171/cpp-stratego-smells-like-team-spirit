@@ -79,7 +79,7 @@ void Display::render()
     SDL_RenderClear(renderer);
     //This is where we could add stuff to render
     SDL_RenderCopy(renderer, background, &source, NULL);
-    SDL_RenderCopy(renderer, background, assets.getTexturePosition(CardType::FLAG, Color::RED), &destination);
+    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
     for (int i = 0; i <= static_cast<int>(CardType::MARSHALL); ++i) {
 
         destination.x = 60 + (i*50);
@@ -91,15 +91,7 @@ void Display::render()
         SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::BLUE), &destination);
     }
 
-    for (int j = 0; j < Game::gameArea.size(); ++j) {
-        for (int i = 0; i < gameArea[j].size(); ++i) {
-            destination.x = gameArea[j][i]->getX();
-            destination.y = gameArea[j][i]->getY();
-            SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
-        }
-    }
-
-    SDL_RenderPresent(renderer);
+    //SDL_RenderPresent(renderer);
 }
 
 void Display::clean() {
@@ -111,4 +103,53 @@ void Display::clean() {
 
 bool Display::running() {
     return isRunning;
+}
+
+void Display::renderField(int x, int y, bool highlighted) {
+    if(highlighted) {
+        SDL_Rect destination;
+        destination.h = 50;
+        destination.w = 50;
+        destination.x = x;
+        destination.y = y;
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+    }
+}
+
+void Display::renderPresent() {
+    SDL_RenderPresent(renderer);
+}
+
+void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard) {
+
+    SDL_Rect destination;
+    destination.h = 50;
+    destination.w = 50;
+    destination.x = x;
+    destination.y = y;
+
+    SDL_RenderCopy(renderer, background, assets.getTexturePosition(faceUpCard, cardColor), &destination);
+    if(highlighted) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+    }
+}
+
+void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
+
+    SDL_Rect destination;
+    destination.h = 50;
+    destination.w = 50;
+    destination.x = x;
+    destination.y = y;
+
+    if(cardBackColor == Color::BLUE) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
+    } else {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::RED_CARD_BACK), &destination);
+    }
+
+    if(highlighted) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+    }
+
 }
