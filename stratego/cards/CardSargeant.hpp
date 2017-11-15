@@ -1,0 +1,8 @@
+//
+// Created by andras on 2017.11.15..
+//
+
+#ifndef STRATEGO_CARDSARGEANT_H
+#define STRATEGO_CARDSARGEANT_H
+
+#endif //STRATEGO_CARDSARGEANT_H

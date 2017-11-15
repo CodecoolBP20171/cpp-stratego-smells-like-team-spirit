@@ -1,0 +1,8 @@
+//
+// Created by andras on 2017.11.15..
+//
+
+#ifndef STRATEGO_CARDMARSHALL_H
+#define STRATEGO_CARDMARSHALL_H
+
+#endif //STRATEGO_CARDMARSHALL_H

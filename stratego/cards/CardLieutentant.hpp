@@ -1,0 +1,8 @@
+//
+// Created by andras on 2017.11.15..
+//
+
+#ifndef STRATEGO_CARDLIEUTENTANT_H
+#define STRATEGO_CARDLIEUTENTANT_H
+
+#endif //STRATEGO_CARDLIEUTENTANT_H

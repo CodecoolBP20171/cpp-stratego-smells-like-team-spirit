@@ -8,6 +8,8 @@
 
 #include <SDL_video.h>
 #include <SDL_render.h>
+#include "Assets.h"
+#include "Field.h"
 
 class Display {
 public:
@@ -17,7 +19,7 @@ public:
     void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
     void handleEvents();
     void update();
-    void render();
+    void render(std::vector<std::vector<std::unique_ptr<Field>>> gameArea);
     void clean();
     bool running();
 
@@ -26,6 +28,7 @@ private:
     SDL_Texture* background;
     SDL_Window* window;
     SDL_Renderer* renderer;
+    Assets assets;
 
 };
 
