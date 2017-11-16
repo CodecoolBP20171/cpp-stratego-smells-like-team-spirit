@@ -36,6 +36,7 @@ public:
 private:
 
     //Game init
+    void initButtons();
     void initGameArea();
     void initCardArea();
 
@@ -43,6 +44,9 @@ private:
     void renderButtons();
     void renderGameArea();
     void renderCardArea();
+
+    void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
+    void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
     Button restart;
     Button exit;
