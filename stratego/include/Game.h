@@ -45,13 +45,17 @@ private:
     void renderGameArea();
     void renderCardArea();
 
+    //Input;
+    void handleEvents();
+    void evaluateInitPhaseClickEvent(ProcessedEvent event);
+
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
     Button restart;
     Button exit;
-    //Field source;
-    //Field destination;
+    ProcessedEvent source;
+    ProcessedEvent destination;
     std::unique_ptr<Display> display;
     GameState gameState;
     std::vector<std::unique_ptr<Field>> gameArea;

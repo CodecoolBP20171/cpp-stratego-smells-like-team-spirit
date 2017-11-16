@@ -8,8 +8,12 @@
 
 #include <SDL_video.h>
 #include <SDL_render.h>
+#include <queue>
 #include "Assets.h"
 #include "Field.h"
+#include "SDL_events.h"
+#include "Coordinate.h"
+#include "ProcessedEvent.hpp"
 
 class Display {
 public:
@@ -29,9 +33,19 @@ public:
     void renderButton(SDL_Rect destination, UIElement texture);
     SDL_Renderer* renderer;
     SDL_Texture* background;
+    ProcessedEvent getEventFromQueue();
+    bool isEventQueueEmpty();
+
 
 private:
+    //Click event processing
+    ProcessedEvent processEvent(int x, int y);
+    int processGameAreaClick(int x, int y);
+    int processSideAreaClick(int x, int y);
+    //SDL_Event event;
+    std::queue<ProcessedEvent> eventQueue;
     bool isRunning;
+
     SDL_Window* window;
     Assets assets;
 
