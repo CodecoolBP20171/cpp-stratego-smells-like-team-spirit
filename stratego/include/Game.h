@@ -11,6 +11,7 @@
 #include "Coordinate.h"
 #include "GameState.h"
 #include "Display.h"
+#include "Button.h"
 
 class Game {
     friend class Display;
@@ -39,9 +40,12 @@ private:
     void initCardArea();
 
     //Rendering
+    void renderButtons();
     void renderGameArea();
     void renderCardArea();
 
+    Button restart;
+    Button exit;
     //Field source;
     //Field destination;
     std::unique_ptr<Display> display;

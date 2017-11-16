@@ -79,17 +79,15 @@ void Display::render()
     SDL_RenderClear(renderer);
     //This is where we could add stuff to render
     SDL_RenderCopy(renderer, background, &source, NULL);
-    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
-    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL); ++i) {
-
-        destination.x = 60 + (i*50);
-        destination.y = 60;
-        SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::RED), &destination);
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
-
-        destination.y = 410;
-        SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::BLUE), &destination);
-    }
+    //SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
+    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL); ++i) {
+    //    destination.x = 60 + (i*50);
+    //    destination.y = 60;
+    //    SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::RED), &destination);
+    //    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+    //    destination.y = 410;
+    //    SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::BLUE), &destination);
+    //}
 
     //SDL_RenderPresent(renderer);
 }
@@ -153,3 +151,8 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
     }
 
 }
+
+void Display::renderButton(SDL_Rect destination, UIElement texture) {
+    SDL_RenderCopy(renderer, background, assets.getUIElement(texture), &destination);
+}
+

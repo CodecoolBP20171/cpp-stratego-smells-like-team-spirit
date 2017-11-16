@@ -44,6 +44,7 @@ void Game::start() {
         display->handleEvents();
         display->update();
         display->render();
+        renderButtons();
         renderGameArea();
         renderCardArea();
         if(gameState == GameState::BLUE_INIT_START) {
@@ -90,6 +91,22 @@ Game::Game() {
     gameState = GameState::BLUE_INIT_START;
     initGameArea();
     initCardArea();
+
+    SDL_Rect btnPos;
+    btnPos.h = 30;
+    btnPos.w = 80;
+    btnPos.x = 550;
+    btnPos.y = 65;
+    restart.setPosition(btnPos);
+    restart.setNormalTexture(UIElement::RESTART_BTN);
+    restart.setPressedDownTexture(UIElement::RESTART_BTN_PRESSED);
+    restart.setPressedDown(false);
+
+    btnPos.x = 660;
+    exit.setPosition(btnPos);
+    exit.setNormalTexture(UIElement::EXIT_BTN);
+    exit.setPressedDownTexture(UIElement::EXIT_BTN_PRESSED);
+    exit.setPressedDown(false);
 }
 
 void Game::initGameArea() {
@@ -159,6 +176,11 @@ void Game::renderCardArea() {
             display->renderField(fieldX, fieldY, highlighted, color, type);
         }
     }
+}
+
+void Game::renderButtons() {
+    display->renderButton(restart.getPosition(), restart.getCurrentTexture());
+    display->renderButton(exit.getPosition(), exit.getCurrentTexture());
 }
 
 
