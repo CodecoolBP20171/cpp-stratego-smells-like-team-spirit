@@ -57,6 +57,8 @@ void Game::start() {
         display->handleEvents();
         display->update();
         display->render();
+        if(gameState == GameState::BLUE_INIT_IN_PROGRESS) display->renderMapOverlay(Color::BLUE);
+        if(gameState == GameState::RED_INIT_IN_PROGRESS) display->renderMapOverlay(Color::RED);
         handleEvents();
         renderButtons();
         renderGameArea();

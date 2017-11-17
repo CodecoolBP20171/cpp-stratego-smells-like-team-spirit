@@ -31,6 +31,7 @@ public:
     void renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard);
     void renderField(int x, int y, bool highlighted, Color cardBackColor);
     void renderButton(SDL_Rect destination, UIElement texture);
+    void renderMapOverlay(Color color);
     SDL_Renderer* renderer;
     SDL_Texture* background;
     ProcessedEvent getEventFromQueue();

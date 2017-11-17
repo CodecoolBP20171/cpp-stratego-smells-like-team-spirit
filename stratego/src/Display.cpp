@@ -209,4 +209,18 @@ int Display::processSideAreaClick(int x, int y) {
     return sideIndex;
 }
 
+void Display::renderMapOverlay(Color color) {
+    SDL_Rect destination;
+    destination.h = 300;
+    destination.w = 500;
+    destination.x = 10;
+    destination.y = 10;
+    if(color == Color::BLUE) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
+    } else {
+        destination.y = 210;
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
+    }
+}
+
 

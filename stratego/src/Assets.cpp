@@ -72,6 +72,18 @@ Assets::Assets() {
     tempRect.x = 80;
     tempRect.y = 650;
     UIElements[UIElement::EXIT_BTN_PRESSED] = tempRect;
+
+    tempRect.h = 300;
+    tempRect.w = 500;
+    tempRect.x = 0;
+    tempRect.y = 680;
+    UIElements[UIElement::MAP_OVERLAY_TOP_SHROUDED] = tempRect;
+
+    tempRect.h = 300;
+    tempRect.w = 500;
+    tempRect.x = 0;
+    tempRect.y = 880;
+    UIElements[UIElement::MAP_OVERLAY_BOTTOM_SHROUDED] = tempRect;
 }
 
 
