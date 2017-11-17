@@ -51,11 +51,18 @@ private:
     //Input
     void handleEvents();
     void restartGame();
+    Color getCurrentPlayerColor();
+
     //Card setup phase input
     void evaluateInitPhaseClickEvent(ProcessedEvent event);
     void initPhaseGameAreaClick(ProcessedEvent event);
     void initPhaseSideAreaClick(ProcessedEvent event);
 
+    //Battle phase input
+    void evaluateBattlePhaseClickEvent(ProcessedEvent event);
+    bool playerHasValidMoves();
+    bool validMovesExistFromField(int fieldIndex);
+    std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index);
 
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
@@ -69,6 +76,7 @@ private:
     std::vector<std::unique_ptr<Field>> gameArea;
     //std::vector<std::vector<std::unique_ptr<Field>>> cardArea;
     std::vector<std::unique_ptr<Field>> cardArea;
+
 };
 
 

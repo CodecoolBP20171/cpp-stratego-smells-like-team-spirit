@@ -59,7 +59,7 @@ void Display::handleEvents() {
             break;
         case SDL_MOUSEBUTTONDOWN: {
             SDL_GetMouseState(&mouse_x, &mouse_y);
-            std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
+            //std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
             processedEvent = processEvent(mouse_x, mouse_y);
             eventQueue.push(processedEvent);
         }

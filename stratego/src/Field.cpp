@@ -45,3 +45,7 @@ void Field::highlight() {
 void Field::unhighlight() {
     isHighlighted = false;
 }
+
+void Field::setIsTraversable(bool isTraversable) {
+    Field::isTraversable = isTraversable;
+}

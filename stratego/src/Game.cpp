@@ -76,6 +76,10 @@ void Game::start() {
             changeFacingOfCards(Color::BLUE, false);
             gameState = GameState::BLUE_MOVE_IN_PROGRESS;
             std::cout << "Blue move in progress...\n";
+        } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+            if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_RED;
+        } else if(gameState == GameState::WAITING_FOR_RED) {
+            std::cout << "waiting for red";
         }
         if(!source.isEmpty() && !destination.isEmpty()){
             std::cout << "trying to move card" << std::endl;
@@ -102,7 +106,8 @@ void Game::populateCardArea() {
         cardArea[j]->removeCard();
     }
 
-    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
@@ -234,6 +239,15 @@ void Game::initGameArea() {
             gameArea.emplace_back(std::move(newField));
         }
     }
+    gameArea[42]->setIsTraversable(false);
+    gameArea[43]->setIsTraversable(false);
+    gameArea[52]->setIsTraversable(false);
+    gameArea[53]->setIsTraversable(false);
+
+    gameArea[46]->setIsTraversable(false);
+    gameArea[47]->setIsTraversable(false);
+    gameArea[56]->setIsTraversable(false);
+    gameArea[57]->setIsTraversable(false);
     //Setting all fields to highlighted for testing
     //for (int k = 0; k < gameArea.size(); k++) {
     //        gameArea[k]->highlight();
@@ -385,16 +399,19 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handleEvents() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
-        std::cout << "got the processed event" << std::endl;
-        std::cout << "field index: " << event.fieldIndex << std::endl;
-        std::cout << "side index: " << event.sideAreaIndex << std::endl;
-        std::cout << "restart: " << event.restartBtn << std::endl;
-        std::cout << "exit:" << event.exitBtn << std::endl;
+        //std::cout << "field index: " << event.fieldIndex << std::endl;
+        //std::cout << "side index: " << event.sideAreaIndex << std::endl;
+        //std::cout << "restart: " << event.restartBtn << std::endl;
+        //std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
             evaluateInitPhaseClickEvent(event);
+        }
+        if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
+                gameState == GameState::RED_MOVE_IN_PROGRESS) {
+            evaluateBattlePhaseClickEvent(event);
         }
 
     }
@@ -403,11 +420,7 @@ void Game::handleEvents() {
 void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
 
     Color currentPlayerColor;
-    if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
-        currentPlayerColor = Color::BLUE;
-    } else {
-        currentPlayerColor = Color::RED;
-    }
+    currentPlayerColor = getCurrentPlayerColor();
 
     if(event.getClickedArea() == ClickedArea::GAME_AREA) {
         if(event.isInTerritory(currentPlayerColor)) {
@@ -496,5 +509,153 @@ void Game::changeFacingOfCards(Color color, bool faceDown){
         }
     }
 }
+
+Color Game::getCurrentPlayerColor() {
+    if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+       gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+        return Color::BLUE;
+    }
+    return Color::RED;
+}
+
+void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
+    //TODO Check if player has valid moves to make
+
+}
+
+bool Game::playerHasValidMoves() {
+    Color currentPlayerColor;
+    currentPlayerColor = getCurrentPlayerColor();
+    unsigned char moveDist;
+    std::vector<int> validMoveIndeces;
+    for (int i = 0; i < gameArea.size(); ++i) {
+        if(gameArea[i]->getContent() != nullptr) {
+            if(gameArea[i]->getContent()->getColor() == currentPlayerColor) {
+                moveDist = gameArea[i]->getContent()->getMoveDistance();
+                validMoveIndeces = gatherNearbyValidFieldIndeces(moveDist, i);
+                if(!validMoveIndeces.empty()) return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Game::validMovesExistFromField(int fieldIndex) {
+    unsigned char moveDistance = gameArea[fieldIndex]->getContent()->getMoveDistance();
+    if(moveDistance == 0) return false;
+    if(moveDistance == 1) {
+        //Check 1 above if possible
+        if((fieldIndex - 10) >= 0) {
+            if(gameArea[fieldIndex-10] == nullptr) return true;
+        }
+        //Check 1 below if possible
+        if((fieldIndex + 10) <= 99) {
+            if(gameArea[fieldIndex+10] == nullptr) return true;
+        }
+    }
+    return false;
+}
+
+std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index) {
+    //TODO Refactor this mess! :(
+    std::vector<int> result;
+    std::cout << "index: " << index << std::endl;
+    Color currentPlayerColor = getCurrentPlayerColor();
+    double gameAreaDiameter= 10;
+    double rightEdge = ((ceil(index/gameAreaDiameter))*gameAreaDiameter)-1;
+    std::cout << "right edge: " << rightEdge << std::endl;
+    double leftEdge = ((floor(index/gameAreaDiameter))*gameAreaDiameter);
+    std::cout << "left edge: " << leftEdge << std::endl;
+
+    //Collect all available indeces above, break loop if edge/obstacle or after finding enemy
+    for (int i = 1; i <= moveDist; ++i) {
+        if ((index - (i * gameAreaDiameter)) >= 0) {
+            if (gameArea[index - (i * gameAreaDiameter)]->getContent() == nullptr) {
+                if( gameArea[index - (i * gameAreaDiameter)]->getIsTraversable()) {
+                    result.emplace_back(index - (i * gameAreaDiameter));
+                } else {
+                    break;
+                }
+            } else if (gameArea[index - (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
+                result.emplace_back(index - (i * gameAreaDiameter));
+                break;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    //Collect all available indeces below, break loop if edge/obstacle or after finding enemy
+    for (int i = 1; i <= moveDist; ++i) {
+        if ((index + (i * gameAreaDiameter)) <= 99) {
+            if (gameArea[index + (i * gameAreaDiameter)]->getContent() == nullptr) {
+                if(gameArea[index + (i * gameAreaDiameter)]->getIsTraversable()) {
+                    result.emplace_back(index + (i * gameAreaDiameter));
+                } else {
+                    break;
+                }
+            } else if (gameArea[index + (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
+                result.emplace_back(index + (i * gameAreaDiameter));
+                break;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    //Collect all available indeces to the right, break loop if edge/obstacle or after finding enemy
+    for (int j = 1; j <= moveDist; ++j) {
+        if (index + j <= rightEdge) {
+            if(gameArea[index + j]->getContent() == nullptr){
+                if( gameArea[index + j]->getIsTraversable()) {
+                    result.emplace_back(index + j);
+                } else {
+                    break;
+                }
+            } else if(gameArea[index + j]->getContent()->getColor() != currentPlayerColor) {
+                result.emplace_back(index + j);
+                break;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    //Collect all available indeces to the left, break loop if edge/obstacle or after finding enemy
+    for (int j = 1; j <= moveDist; ++j) {
+        if (index - j >= leftEdge) {
+            if(gameArea[index - j]->getContent() == nullptr){
+                if( gameArea[index - j]->getIsTraversable()) {
+                    result.emplace_back(index - j);
+                } else {
+                    break;
+                }
+            } else if(gameArea[index - j]->getContent()->getColor() != currentPlayerColor) {
+                result.emplace_back(index - j);
+                break;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    //DEBUG
+    std::cout << "Valid move indeces for " << index << " ";
+    for (int k = 0; k < result.size(); ++k) {
+        std::cout << result[k] << " ";
+    }
+    std::cout << std::endl;
+
+    return result;
+}
+
 
 
