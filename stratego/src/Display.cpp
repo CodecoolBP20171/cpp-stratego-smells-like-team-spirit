@@ -48,14 +48,22 @@ void Display::init(const char *title, int xpos, int ypos, int width, int height,
 
 void Display::handleEvents() {
     SDL_Event event;
-
     SDL_PollEvent(&event);
-    {
-        switch (event.type){
-            case SDL_QUIT: isRunning = false;
-                break;
-            default: break;
+    ProcessedEvent processedEvent;
+    int mouse_x, mouse_y;
+
+    switch (event.type){
+        case SDL_QUIT: isRunning = false;
+            processedEvent.exitBtn = true;
+            eventQueue.push(processedEvent);
+            break;
+        case SDL_MOUSEBUTTONDOWN: {
+            SDL_GetMouseState(&mouse_x, &mouse_y);
+            std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
+            processedEvent = processEvent(mouse_x, mouse_y);
+            eventQueue.push(processedEvent);
         }
+        default: break;
     }
 }
 
@@ -155,4 +163,50 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
 void Display::renderButton(SDL_Rect destination, UIElement texture) {
     SDL_RenderCopy(renderer, background, assets.getUIElement(texture), &destination);
 }
+
+ProcessedEvent Display::getEventFromQueue() {
+    ProcessedEvent result;
+    if(!eventQueue.empty()) {
+        result = eventQueue.front();
+        eventQueue.pop();
+    }
+    return result;
+}
+
+bool Display::isEventQueueEmpty() {
+    return eventQueue.empty();
+}
+
+ProcessedEvent Display::processEvent(int x, int y) {
+    ProcessedEvent processedEvent;
+    //Weed out out of bounds clicks
+    if(x<10 || x>770 || y<10 || y > 510) { return processedEvent;}
+
+    if(x>550 && x<630 && y>65 && y<95) {
+        processedEvent.exitBtn = true;
+    }
+    if(x>660 && x<740 && y>65 && y<95) {
+        processedEvent.restartBtn = true;
+    }
+    if(x>10 && x<510 && y>10 && y<510) {
+        processedEvent.fieldIndex = processGameAreaClick(x, y);
+    }
+    if(x>520 && x<770 & y>110 && y<510){
+        processedEvent.sideAreaIndex = processSideAreaClick(x, y);
+    }
+    return processedEvent;
+}
+
+int Display::processGameAreaClick(int x, int y) {
+    int fieldIndex;
+    fieldIndex = (floor((y-10)/50)*10)+ceil((x-10)/50);
+    return fieldIndex;
+}
+
+int Display::processSideAreaClick(int x, int y) {
+    int sideIndex;
+    sideIndex = (floor((y-110)/50)*5)+ceil((x-520)/50);
+    return sideIndex;
+}
+
 

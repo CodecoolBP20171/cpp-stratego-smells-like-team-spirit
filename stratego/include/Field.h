@@ -22,7 +22,6 @@ public:
     bool getIsHighlighted() const;
     const std::unique_ptr<Card> &getContent() const;
 
-
     std::unique_ptr<Card> removeCard();
     void placeCard(std::unique_ptr<Card> cardToPlace);
     void highlight();

@@ -25,10 +25,6 @@ public:
     void populateCardArea();
     void placeCard();
 
-    //Main Game Loop
-    void setMove();
-    void hideCardsDuringTransition();
-    void moveCard();
 
 
 
@@ -36,18 +32,38 @@ public:
 private:
 
     //Game init
+    void initButtons();
     void initGameArea();
     void initCardArea();
+
+    //Main Game Loop
+    void setMove();
+    void hideCardsDuringTransition();
+    void moveCard();
+    bool isCardAreaEmpty();
 
     //Rendering
     void renderButtons();
     void renderGameArea();
     void renderCardArea();
+    void changeFacingOfCards(Color color, bool faceDown);
+
+    //Input
+    void handleEvents();
+    void restartGame();
+    //Card setup phase input
+    void evaluateInitPhaseClickEvent(ProcessedEvent event);
+    void initPhaseGameAreaClick(ProcessedEvent event);
+    void initPhaseSideAreaClick(ProcessedEvent event);
+
+
+    void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
+    void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
     Button restart;
     Button exit;
-    //Field source;
-    //Field destination;
+    ProcessedEvent source;
+    ProcessedEvent destination;
     std::unique_ptr<Display> display;
     GameState gameState;
     std::vector<std::unique_ptr<Field>> gameArea;
