@@ -49,15 +49,19 @@ void Display::init(const char *title, int xpos, int ypos, int width, int height,
 void Display::handleEvents() {
     SDL_Event event;
     SDL_PollEvent(&event);
+    ProcessedEvent processedEvent;
+    int mouse_x, mouse_y;
+
     switch (event.type){
         case SDL_QUIT: isRunning = false;
+            processedEvent.exitBtn = true;
+            eventQueue.push(processedEvent);
             break;
         case SDL_MOUSEBUTTONDOWN: {
-            int mouse_x, mouse_y;
             SDL_GetMouseState(&mouse_x, &mouse_y);
             std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
-            ProcessedEvent event = processEvent(mouse_x, mouse_y);
-            eventQueue.push(event);
+            processedEvent = processEvent(mouse_x, mouse_y);
+            eventQueue.push(processedEvent);
         }
         default: break;
     }

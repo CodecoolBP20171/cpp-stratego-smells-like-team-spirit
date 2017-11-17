@@ -21,37 +21,38 @@ void Game::start() {
     //TODO contains main loop, starts with clearing screen, checking gameState and variables and rendering screen accordingly.
 
     //Testing card
-    std::unique_ptr<Card> testCard = std::unique_ptr<CardBomb>(new CardBomb(Color::BLUE));
+    //std::unique_ptr<Card> testCard = std::unique_ptr<CardBomb>(new CardBomb(Color::BLUE));
     //std::cout << "card trying to defeat flag: " << testCard->canDefeat(CardType::FLAG);
     //std::cout << "card trying to defeat marshall: " << testCard->canDefeat(CardType::MARSHALL);
 
     //Testing field, adding, removing content etc.
-    Field testingField(10, 10, true);
-    //if(testingField.getContent() == nullptr) {
+    //std::unique_ptr<Field> testField = std::unique_ptr<Field>(new Field(10, 10, true));
+    //if(testField->getContent() == nullptr) {
     //    std::cout << "Field content is nullptr" << std::endl;
     //}
-    //testingField.placeCard(std::move(testCard));
-    //if(testingField.getContent() == nullptr) {
+    //testField->placeCard(std::move(testCard));
+    //if(testField->getContent() == nullptr) {
     //    std::cout << "Field content is nullptr" << std::endl;
     //} else {
     //    if(testCard == nullptr) {
     //        std::cout << "test card became nullptr" << std::endl;
     //    }
-    //    std::cout << "Field content: " << static_cast<int>(testingField.getContent()->getType()) << std::endl;
+    //    std::cout << "Field content: " << static_cast<int>(testField->getContent()->getType()) << std::endl;
     //}
     //std::cout << "\nremoving from Field back to testCard" << std::endl;
-    //testCard = testingField.removeCard();
+    //testCard = testField->removeCard();
     //if(testCard == nullptr) {
     //    std::cout << "test card is nullptr" << std::endl;
     //} else {
     //    std::cout << "test card TYPE: " << static_cast<int>(testCard->getType())<<std::endl;
     //}
-    //if(testingField.getContent() == nullptr) {
+    //if(testField->getContent() == nullptr) {
     //    std::cout << "field content is nullptr" << std::endl;
     //}
 
     display = std::unique_ptr<Display>(new Display());
     display->init("Stratego", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
+
     while(gameState != GameState::EXIT) {
         display->handleEvents();
         display->update();
@@ -63,6 +64,16 @@ void Game::start() {
         if(gameState == GameState::BLUE_INIT_START ||
                 gameState == GameState::RED_INIT_START) {
             populateCardArea();
+        } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS &&
+                isCardAreaEmpty()) {
+            changeFacingOfCards(Color::BLUE, true);
+            gameState = GameState::RED_INIT_START;
+        } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
+                isCardAreaEmpty()) {
+            changeFacingOfCards(Color::RED, true);
+            changeFacingOfCards(Color::BLUE, false);
+            gameState = GameState::BLUE_MOVE_IN_PROGRESS;
+            std::cout << "Blue move in progress...\n";
         }
         if(!source.isEmpty() && !destination.isEmpty()){
             std::cout << "trying to move card" << std::endl;
@@ -180,21 +191,21 @@ void Game::setMove() {
 }
 
 void Game::moveCard() {
-    //TODO Used for performing the move from the source field to the destination field
 
-    if(source.fieldIndex != -1) {
-        std::cout << "inside move card\n";
-        std::unique_ptr<Card> tempCard = gameArea[source.fieldIndex]->removeCard();
-        if(destination.fieldIndex != -1) {
-            std::cout << "inside move card";
-            gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
-        }
-    } else if(source.sideAreaIndex != -1) {
-        std::unique_ptr<Card> tempCard = std::unique_ptr<Card>(cardArea[source.sideAreaIndex]->removeCard());
-        if(destination.fieldIndex != -1) {
-            std::cout << "inside placing";
-            gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
-        }
+    std::unique_ptr<Card> tempCard;
+    if(source.getClickedArea() == ClickedArea::GAME_AREA) {
+        tempCard = gameArea[source.fieldIndex]->removeCard();
+        gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
+        gameArea[source.fieldIndex]->unhighlight();
+        source.empty();
+        destination.empty();
+
+    } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
+        tempCard = cardArea[source.sideAreaIndex]->removeCard();
+        gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
+        cardArea[source.sideAreaIndex]->unhighlight();
+        source.empty();
+        destination.empty();
 
     }
 }
@@ -205,7 +216,7 @@ void Game::hideCardsDuringTransition() {
 }
 
 Game::Game() {
-    gameState = GameState::RED_INIT_START;
+    gameState = GameState::BLUE_INIT_START;
     initGameArea();
     initCardArea();
     initButtons();
@@ -222,9 +233,9 @@ void Game::initGameArea() {
         }
     }
     //Setting all fields to highlighted for testing
-    for (int k = 0; k < gameArea.size(); k++) {
-            gameArea[k]->highlight();
-        }
+    //for (int k = 0; k < gameArea.size(); k++) {
+    //        gameArea[k]->highlight();
+    //    }
 }
 
 
@@ -253,7 +264,7 @@ void Game::renderGameArea() {
         if(gameArea[i]->getContent() == nullptr) {
             display->renderField(fieldX, fieldY, highlighted);
         } else {
-            if(!gameArea[i]->getContent()->getIsFaceDown()){
+            if(gameArea[i]->getContent()->getIsFaceDown()){
                 Color color = gameArea[i]->getContent()->getColor();
                 display->renderField(fieldX, fieldY, highlighted, color);
             } else {
@@ -378,7 +389,7 @@ void Game::handleEvents() {
         std::cout << "restart: " << event.restartBtn << std::endl;
         std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
-        if(event.restartBtn) {gameState = GameState::BLUE_INIT_START;}
+        if(event.restartBtn) {restartGame();}
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
             evaluateInitPhaseClickEvent(event);
@@ -388,6 +399,7 @@ void Game::handleEvents() {
 }
 
 void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
+
     Color currentPlayerColor;
     if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
         currentPlayerColor = Color::BLUE;
@@ -395,36 +407,92 @@ void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
         currentPlayerColor = Color::RED;
     }
 
-    if(source.isEmpty()) {
-        if(event.fieldIndex != -1) {
-            if(gameArea[event.fieldIndex]->getContent() != nullptr) {
-                if(gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
-                    source = event;
-                    gameArea[event.fieldIndex]->highlight();
-                }
-            }
-        } else if (event.sideAreaIndex != -1) {
-            if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
-                if(cardArea[event.sideAreaIndex]->getContent()->getColor() == currentPlayerColor) {
-                    source = event;
-                    cardArea[event.sideAreaIndex]->highlight();
-                }
-            }
-
+    if(event.getClickedArea() == ClickedArea::GAME_AREA) {
+        if(event.isInTerritory(currentPlayerColor)) {
+            initPhaseGameAreaClick(event);
         }
-    } else if(source.fieldIndex == event.fieldIndex &&
-            source.fieldIndex != -1 && event.fieldIndex != -1) {
-        gameArea[event.fieldIndex]->unhighlight();
-        source.empty();
-    } else if(source.sideAreaIndex == event.sideAreaIndex &&
-            source.sideAreaIndex != -1 && event.sideAreaIndex != -1) {
-        cardArea[event.sideAreaIndex]->unhighlight();
-        source.empty();
-    } else if(destination.isEmpty() && event.isInTerritory(currentPlayerColor)) {
-        destination = event;
-        std::cout << "set destination" << std::endl;
+    } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
+        initPhaseSideAreaClick(event);
     }
 }
 
+void Game::initPhaseGameAreaClick(ProcessedEvent event) {
+    if(!source.isEmpty()) {
+        if(gameArea[event.fieldIndex]->getContent() == nullptr) {
+            destination = event;
+        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
+                event.fieldIndex != source.fieldIndex) {
+            gameArea[source.fieldIndex]->unhighlight();
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
+                event.fieldIndex == source.fieldIndex) {
+            gameArea[source.fieldIndex]->unhighlight();
+            source.empty();
+        } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
+            cardArea[source.sideAreaIndex]->unhighlight();
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        }
+    } else {
+        if(gameArea[event.fieldIndex]->getContent() != nullptr) {
+            source = event;
+            gameArea[source.fieldIndex]->highlight();
+        }
+    }
+}
+
+void Game::initPhaseSideAreaClick(ProcessedEvent event) {
+    if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
+        if(source.isEmpty()) {
+            source = event;
+            cardArea[source.sideAreaIndex]->highlight();
+        } else {
+            if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
+                    source.sideAreaIndex == event.sideAreaIndex) {
+                cardArea[source.sideAreaIndex]->unhighlight();
+                source.empty();
+            } else if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
+                    source.sideAreaIndex != event.sideAreaIndex){
+                cardArea[source.sideAreaIndex]->unhighlight();
+                cardArea[event.sideAreaIndex]->highlight();
+                source = event;
+            } else if(source.getClickedArea() == ClickedArea::GAME_AREA) {
+                gameArea[source.fieldIndex]->unhighlight();
+                cardArea[event.sideAreaIndex]->highlight();
+                source = event;
+            }
+        }
+    }
+}
+
+void Game::restartGame() {
+    for (int i = 0; i < gameArea.size(); ++i) {
+        gameArea[i]->removeCard();
+    }
+    for (int j = 0; j < cardArea.size(); ++j) {
+        cardArea[j]->removeCard();
+    }
+    gameState = GameState::BLUE_INIT_START;
+}
+
+bool Game::isCardAreaEmpty() {
+    for (int i = 0; i < cardArea.size(); ++i) {
+        if(cardArea[i]->getContent() != nullptr) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Game::changeFacingOfCards(Color color, bool faceDown){
+    for (int i = 0; i < gameArea.size(); ++i) {
+        if(gameArea[i]->getContent() != nullptr) {
+            if(gameArea[i]->getContent()->getColor() == color) {
+                gameArea[i]->getContent()->setIsFaceDown(faceDown);
+            }
+        }
+    }
+}
 
 

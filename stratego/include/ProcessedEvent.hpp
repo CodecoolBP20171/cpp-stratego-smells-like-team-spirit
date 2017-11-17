@@ -7,6 +7,7 @@
 
 
 #include <Color.h>
+#include <ClickedArea.h>
 
 struct ProcessedEvent {
     bool restartBtn = false;
@@ -34,6 +35,12 @@ struct ProcessedEvent {
         } else {
             return fieldIndex >= 60;
         }
+    }
+
+    ClickedArea getClickedArea() {
+        if(fieldIndex != -1) return ClickedArea::GAME_AREA;
+        if(sideAreaIndex != -1) return ClickedArea::SIDE_AREA;
+        if(fieldIndex == -1 && sideAreaIndex == -1) return ClickedArea::UI;
     }
 
     void empty() {

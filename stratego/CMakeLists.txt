@@ -21,7 +21,7 @@ set(SOURCE_FILES
         src/Field.cpp
         src/Game.cpp
         src/GameState.cpp
-        main.cpp src/Display.cpp include/Display.h enums/Color.h src/Assets.cpp include/Assets.h cards/CardFlag.hpp cards/CardBomb.hpp cards/CardSpy.hpp cards/CardScout.hpp cards/CardMiner.hpp cards/CardSargeant.hpp cards/CardLieutentant.hpp cards/CardCaptain.hpp cards/CardMajor.hpp cards/CardColonel.hpp cards/CardGeneral.hpp cards/CardMarshall.hpp enums/UIElement.h src/Button.cpp include/Button.h include/ProcessedEvent.hpp)
+        main.cpp src/Display.cpp include/Display.h enums/Color.h src/Assets.cpp include/Assets.h cards/CardFlag.hpp cards/CardBomb.hpp cards/CardSpy.hpp cards/CardScout.hpp cards/CardMiner.hpp cards/CardSargeant.hpp cards/CardLieutentant.hpp cards/CardCaptain.hpp cards/CardMajor.hpp cards/CardColonel.hpp cards/CardGeneral.hpp cards/CardMarshall.hpp enums/UIElement.h src/Button.cpp include/Button.h include/ProcessedEvent.hpp enums/ClickedArea.h)
 
 add_executable(stratego ${SOURCE_FILES})
 
