@@ -73,17 +73,26 @@ Assets::Assets() {
     tempRect.y = 650;
     UIElements[UIElement::EXIT_BTN_PRESSED] = tempRect;
 
-    tempRect.h = 300;
+    tempRect.h = 250;
     tempRect.w = 500;
     tempRect.x = 0;
     tempRect.y = 680;
     UIElements[UIElement::MAP_OVERLAY_TOP_SHROUDED] = tempRect;
 
-    tempRect.h = 300;
+    tempRect.h = 250;
     tempRect.w = 500;
     tempRect.x = 0;
-    tempRect.y = 880;
+    tempRect.y = 920;
     UIElements[UIElement::MAP_OVERLAY_BOTTOM_SHROUDED] = tempRect;
+
+    tempRect.h = 50;
+    tempRect.w = 500;
+    tempRect.x = 780;
+    tempRect.y = 900;
+    UIElements[UIElement::MAP_OVERLAY_FADE_BOTTOM_MAP] = tempRect;
+
+    tempRect.y = 950;
+    UIElements[UIElement::MAP_OVERLAY_FADE_TOP_MAP] = tempRect;
 
     tempRect.h = 280;
     tempRect.w = 250;
@@ -93,6 +102,32 @@ Assets::Assets() {
 
     tempRect.y = 900;
     UIElements[UIElement::MSG_WAIT_FOR_RED] = tempRect;
+
+    tempRect.h = 150;
+    tempRect.w = 500;
+    tempRect.x = 780;
+    tempRect.y = 0;
+    UIElements[UIElement::VICTORY_COMMON_TOP] = tempRect;
+
+    tempRect.h = 200;
+    tempRect.y = 150;
+    UIElements[UIElement::VICTORY_BLUE_MID] = tempRect;
+
+    tempRect.y = 350;
+    UIElements[UIElement::VICTORY_TIED] = tempRect;
+
+    tempRect.y = 550;
+    UIElements[UIElement::VICTORY_RED_MID] = tempRect;
+
+    tempRect.h = 150;
+    tempRect.y = 750;
+    UIElements[UIElement::VICTORY_COMMON_BOTTOM] = tempRect;
+
+    tempRect.h = 50;
+    tempRect.w = 50;
+    tempRect.x = 650;
+    tempRect.y = 570;
+    UIElements[UIElement::AVAILABLE_MOVE] = tempRect;
 }
 
 

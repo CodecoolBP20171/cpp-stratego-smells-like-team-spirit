@@ -21,13 +21,6 @@ public:
     ~Game() = default;
     void start();
 
-    //Init
-    void placeCard();
-
-
-
-
-
 private:
 
     //Game init
@@ -38,16 +31,16 @@ private:
 
     //Main Game Loop
     void populateCardArea();
-    void setMove();
-    void hideCardsDuringTransition();
     void moveCard();
     bool isCardAreaEmpty();
+    void checkIfTied();
 
     //Rendering
     void renderButtons();
     void renderGameArea();
     void renderCardArea();
     void renderDiscardPile();
+    void renderAvailableMoves();
     void clearHighlights();
     void changeFacingOfCards(Color color, bool faceDown);
     void revealCombatants();
@@ -64,8 +57,7 @@ private:
 
     //Battle phase input
     void evaluateBattlePhaseClickEvent(ProcessedEvent event);
-    bool playerHasValidMoves();
-    bool validMovesExistFromField(int fieldIndex);
+    bool playerHasValidMoves(Color color);
     std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index);
     void resolveBattle();
     void triggerVictory(Color color);
@@ -74,6 +66,7 @@ private:
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
+    std::vector<int> possibleMoves;
     Button restart;
     Button exit;
     ProcessedEvent attacker;

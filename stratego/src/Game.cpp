@@ -58,6 +58,7 @@ void Game::start() {
         display->handleEvents();
         display->update();
         display->render();
+        if(!source.isEmpty()) renderAvailableMoves();
         if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
             display->renderMapOverlay(Color::BLUE);
             renderCardArea();
@@ -66,13 +67,19 @@ void Game::start() {
             display->renderMapOverlay(Color::RED);
             renderCardArea();
         }
-        if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
-                gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            renderDiscardPile();
-        }
         handleEvents();
         renderButtons();
         renderGameArea();
+        if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
+           gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+            renderDiscardPile();
+            checkIfTied();
+            if(!source.isEmpty()) {
+                unsigned char moveDist;
+                moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
+                possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
+            }
+        }
         if(gameState == GameState::BLUE_INIT_START ||
                 gameState == GameState::RED_INIT_START) {
             populateCardArea();
@@ -89,12 +96,12 @@ void Game::start() {
             gameState = GameState::WAITING_FOR_BLUE;
 
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_RED;
+            if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_RED;
             changeFacingOfCards(Color::BLUE, false);
             resolveBattle();
 
         } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
-            if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_BLUE;
+            if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_BLUE;
             changeFacingOfCards(Color::RED, false);
             resolveBattle();
 
@@ -112,9 +119,11 @@ void Game::start() {
             revealCombatants();
             display->renderWaitMsg(Color::RED);
         } else if(gameState == GameState::BLUE_WINS) {
-            std::cout << "Blue wins. yay." << std::endl;
+            display->renderVictory(GameState::BLUE_WINS);
         } else if(gameState == GameState::RED_WINS) {
-            std::cout << "Red wins. yay." << std::endl;
+            display->renderVictory(GameState::RED_WINS);
+        } else if(gameState == GameState::TIED) {
+            display->renderVictory(GameState::TIED);
         }
         if(!source.isEmpty() && !destination.isEmpty()){
             moveCard();
@@ -125,23 +134,8 @@ void Game::start() {
 }
 
 void Game::populateCardArea() {
-    //TODO Checks gameState to see which player's cards need to be created
-    //TODO Loops through all cardTypes and adds the corresponding amount of copies of them to the card area.
-    //for (int i = 0; i < 10; ++i) {
-    //    std::unique_ptr<Card> testCard = std::unique_ptr<CardBomb>(new CardBomb(Color::BLUE));
-    //    testCard->setIsFaceDown(true);
-    //    for (int j = 0; j < cardArea.size() ; ++j) {
-    //        if(cardArea[j]->getContent() == nullptr) {
-    //            cardArea[j]->placeCard(std::move(testCard));
-    //        }
-    //    }
-    //}
-    for (int j = 0; j < cardArea.size() ; ++j) {
-        cardArea[j]->removeCard();
-    }
-
-    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
@@ -159,7 +153,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -170,7 +164,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -225,14 +219,6 @@ void Game::populateCardArea() {
     }
 }
 
-void Game::placeCard() {
-    //TODO Used in the init phase. Highlights field, chooses Destination and performs the placement of card from card area to game area.
-}
-
-void Game::setMove() {
-    //TODO Used to set the source and the destination for a move.
-}
-
 void Game::moveCard() {
 
     std::unique_ptr<Card> tempCard;
@@ -262,11 +248,6 @@ void Game::moveCard() {
     source.empty();
     destination.empty();
 
-}
-
-void Game::hideCardsDuringTransition() {
-    //TODO checks if the destination contains a card. If yes, then that means the move was an attack so show attacker and defender but face everything else down.
-    //TODO If destination was empty, then face down all cards.
 }
 
 Game::Game() {
@@ -575,18 +556,16 @@ Color Game::getCurrentPlayerColor() {
 }
 
 void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
-    //TODO Check if player has valid moves to make
     Color currentPlayerColor = getCurrentPlayerColor();
-    std::vector<int> validFieldIndeces;
     unsigned char moveDist;
 
-    if(!source.isEmpty()) {
-        moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
-        validFieldIndeces = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
-    }
+    //if(!source.isEmpty()) {
+    //    moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
+    //    possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
+    //}
 
     if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-        if(std::find(validFieldIndeces.begin(), validFieldIndeces.end(), event.fieldIndex) != validFieldIndeces.end()) {
+        if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
             destination = event;
             gameArea[source.fieldIndex]->unhighlight();
         }
@@ -599,7 +578,7 @@ void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
             gameArea[event.fieldIndex]->highlight();
             source = event;
         } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() != currentPlayerColor) {
-            if(std::find(validFieldIndeces.begin(), validFieldIndeces.end(), event.fieldIndex) != validFieldIndeces.end()) {
+            if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
                 defender = event;
                 attacker = source;
                 std::cout << "attacker: " << attacker.fieldIndex << std::endl;
@@ -617,9 +596,7 @@ void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
     }
 }
 
-bool Game::playerHasValidMoves() {
-    Color currentPlayerColor;
-    currentPlayerColor = getCurrentPlayerColor();
+bool Game::playerHasValidMoves(Color currentPlayerColor) {
     unsigned char moveDist;
     std::vector<int> validMoveIndeces;
     for (int i = 0; i < gameArea.size(); ++i) {
@@ -634,31 +611,15 @@ bool Game::playerHasValidMoves() {
     return false;
 }
 
-bool Game::validMovesExistFromField(int fieldIndex) {
-    unsigned char moveDistance = gameArea[fieldIndex]->getContent()->getMoveDistance();
-    if(moveDistance == 0) return false;
-    if(moveDistance == 1) {
-        //Check 1 above if possible
-        if((fieldIndex - 10) >= 0) {
-            if(gameArea[fieldIndex-10] == nullptr) return true;
-        }
-        //Check 1 below if possible
-        if((fieldIndex + 10) <= 99) {
-            if(gameArea[fieldIndex+10] == nullptr) return true;
-        }
-    }
-    return false;
-}
-
 std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index) {
     //TODO Refactor this mess! :(
     std::vector<int> result;
     //std::cout << "index: " << index << std::endl;
     Color currentPlayerColor = getCurrentPlayerColor();
-    double gameAreaDiameter= 10;
-    double rightEdge = ((ceil(index/gameAreaDiameter))*gameAreaDiameter)-1;
+    int gameAreaDiameter = 10;
+    int rightEdge = ((index / gameAreaDiameter)*gameAreaDiameter) + gameAreaDiameter -1;
     //std::cout << "right edge: " << rightEdge << std::endl;
-    double leftEdge = ((floor(index/gameAreaDiameter))*gameAreaDiameter);
+    int leftEdge = ((index / gameAreaDiameter)*gameAreaDiameter);
     //std::cout << "left edge: " << leftEdge << std::endl;
 
     //Collect all available indeces above, break loop if edge/obstacle or after finding enemy
@@ -806,7 +767,6 @@ void Game::triggerVictory(Color winner) {
 }
 
 void Game::initDiscardPile() {
-
     size_t x, y;
     for (int i = 0; i < 16; ++i) {
         y = 110 + 25 * static_cast<size_t >(i);
@@ -838,6 +798,24 @@ int Game::getNextEmptyDiscardPileIndex() {
         if(discardPile[i]->getContent() == nullptr) {
             return i;
         }
+    }
+}
+
+void Game::renderAvailableMoves() {
+    int x, y;
+    if(!possibleMoves.empty()) {
+        for (int i = 0; i < possibleMoves.size(); ++i) {
+            x = gameArea[possibleMoves[i]]->getX();
+            y = gameArea[possibleMoves[i]]->getY();
+            display->renderAvailableMove(x, y);
+        }
+    }
+}
+
+void Game::checkIfTied() {
+    if(!playerHasValidMoves(Color::RED) &&
+            !playerHasValidMoves(Color::BLUE)) {
+        gameState = GameState::TIED;
     }
 }
 

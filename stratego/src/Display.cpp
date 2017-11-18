@@ -211,15 +211,21 @@ int Display::processSideAreaClick(int x, int y) {
 
 void Display::renderMapOverlay(Color color) {
     SDL_Rect destination;
-    destination.h = 300;
+    destination.h = 250;
     destination.w = 500;
     destination.x = 10;
     destination.y = 10;
     if(color == Color::BLUE) {
         SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
+        destination.y = 260;
+        destination.h = 50;
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_TOP_MAP), &destination);
     } else {
-        destination.y = 210;
+        destination.y = 260;
         SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
+        destination.y = 210;
+        destination.h = 50;
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_BOTTOM_MAP), &destination);
     }
 }
 
@@ -234,6 +240,39 @@ void Display::renderWaitMsg(Color color) {
     } else {
         SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MSG_WAIT_FOR_RED), &destination);
     }
+}
+
+void Display::renderVictory(GameState victory) {
+    SDL_Rect destination;
+    destination.h = 150;
+    destination.w = 500;
+    destination.x = 10;
+    destination.y = 10;
+
+    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::VICTORY_COMMON_TOP), &destination);
+    destination.y = 360;
+    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::VICTORY_COMMON_BOTTOM), &destination);
+
+    destination.h = 200;
+    destination.y = 160;
+    if(victory == GameState::BLUE_WINS) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::VICTORY_BLUE_MID), &destination);
+    } else if(victory == GameState::RED_WINS) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::VICTORY_RED_MID), &destination);
+    } else if(victory == GameState::TIED) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::VICTORY_TIED), &destination);
+    }
+
+}
+
+void Display::renderAvailableMove(int x, int y) {
+    SDL_Rect destination;
+    destination.h = 50;
+    destination.w = 50;
+    destination.x = x;
+    destination.y = y;
+
+    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::AVAILABLE_MOVE), &destination);
 }
 
 

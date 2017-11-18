@@ -9,6 +9,7 @@
 #include <SDL_video.h>
 #include <SDL_render.h>
 #include <queue>
+#include <GameState.h>
 #include "Assets.h"
 #include "Field.h"
 #include "SDL_events.h"
@@ -33,6 +34,8 @@ public:
     void renderButton(SDL_Rect destination, UIElement texture);
     void renderMapOverlay(Color color);
     void renderWaitMsg(Color color);
+    void renderVictory(GameState victory);
+    void renderAvailableMove(int x, int y);
 
     SDL_Renderer* renderer;
     SDL_Texture* background;
