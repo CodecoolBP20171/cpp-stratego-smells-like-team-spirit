@@ -58,12 +58,21 @@ void Game::start() {
         display->handleEvents();
         display->update();
         display->render();
-        if(gameState == GameState::BLUE_INIT_IN_PROGRESS) display->renderMapOverlay(Color::BLUE);
-        if(gameState == GameState::RED_INIT_IN_PROGRESS) display->renderMapOverlay(Color::RED);
+        if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
+            display->renderMapOverlay(Color::BLUE);
+            renderCardArea();
+        }
+        if(gameState == GameState::RED_INIT_IN_PROGRESS) {
+            display->renderMapOverlay(Color::RED);
+            renderCardArea();
+        }
+        if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
+                gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+            renderDiscardPile();
+        }
         handleEvents();
         renderButtons();
         renderGameArea();
-        renderCardArea();
         if(gameState == GameState::BLUE_INIT_START ||
                 gameState == GameState::RED_INIT_START) {
             populateCardArea();
@@ -82,20 +91,30 @@ void Game::start() {
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
             if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_RED;
             changeFacingOfCards(Color::BLUE, false);
+            resolveBattle();
 
         } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
             if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_BLUE;
             changeFacingOfCards(Color::RED, false);
+            resolveBattle();
 
         } else if(gameState == GameState::WAITING_FOR_BLUE) {
             changeFacingOfCards(Color::RED, true);
             changeFacingOfCards(Color::BLUE, true);
+            renderDiscardPile();
+            revealCombatants();
             display->renderWaitMsg(Color::BLUE);
 
         } else if(gameState == GameState::WAITING_FOR_RED) {
             changeFacingOfCards(Color::RED, true);
             changeFacingOfCards(Color::BLUE, true);
+            renderDiscardPile();
+            revealCombatants();
             display->renderWaitMsg(Color::RED);
+        } else if(gameState == GameState::BLUE_WINS) {
+            std::cout << "Blue wins. yay." << std::endl;
+        } else if(gameState == GameState::RED_WINS) {
+            std::cout << "Red wins. yay." << std::endl;
         }
         if(!source.isEmpty() && !destination.isEmpty()){
             moveCard();
@@ -255,6 +274,7 @@ Game::Game() {
     initGameArea();
     initCardArea();
     initButtons();
+    initDiscardPile();
 }
 
 void Game::initGameArea() {
@@ -437,18 +457,15 @@ void Game::handleEvents() {
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
             evaluateInitPhaseClickEvent(event);
-        }
-        if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
+        } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
                 gameState == GameState::RED_MOVE_IN_PROGRESS) {
             if(event.getClickedArea() == ClickedArea::GAME_AREA) {
                 evaluateBattlePhaseClickEvent(event);
             }
-        }
-        if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
+        } else if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
             gameState = GameState::BLUE_MOVE_IN_PROGRESS;
-        }
-        if(gameState == GameState::WAITING_FOR_RED && event.getClickedArea() == ClickedArea::GAME_AREA) {
+        } else if(gameState == GameState::WAITING_FOR_RED && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
             gameState = GameState::RED_MOVE_IN_PROGRESS;
         }
@@ -587,6 +604,14 @@ void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
                 attacker = source;
                 std::cout << "attacker: " << attacker.fieldIndex << std::endl;
                 std::cout << "defender: " << defender.fieldIndex << std::endl;
+                if(currentPlayerColor == Color::BLUE) {
+                    gameState = GameState::WAITING_FOR_RED;
+                    std::cout << "setting gamestate to: " << static_cast<int>(gameState) << std::endl;
+                } else if(currentPlayerColor == Color::RED) {
+                    gameState = GameState::WAITING_FOR_BLUE;
+                }
+                source.empty();
+                destination.empty();
             }
         }
     }
@@ -730,6 +755,88 @@ void Game::clearHighlights() {
     for (int i = 0; i < gameArea.size(); ++i) {
         if(gameArea[i]->getIsHighlighted()) {
             gameArea[i]->unhighlight();
+        }
+    }
+}
+
+void Game::revealCombatants() {
+    if(attacker.fieldIndex != -1 && defender.fieldIndex != -1) {
+        gameArea[attacker.fieldIndex]->getContent()->setIsFaceDown(false);
+        gameArea[defender.fieldIndex]->getContent()->setIsFaceDown(false);
+    }
+}
+
+void Game::resolveBattle() {
+    if(attacker.isEmpty() || defender.isEmpty()) return;
+    std::unique_ptr<Card> tempCard;
+    if(gameArea[attacker.fieldIndex]->getContent()->getType() ==
+            gameArea[defender.fieldIndex]->getContent()->getType()) {
+
+        tempCard = gameArea[attacker.fieldIndex]->removeCard();
+        discardPile[getNextEmptyDiscardPileIndex()]->placeCard(std::move(tempCard));
+
+        tempCard = gameArea[defender.fieldIndex]->removeCard();
+        discardPile[getNextEmptyDiscardPileIndex()]->placeCard(std::move(tempCard));
+
+    } else if (gameArea[attacker.fieldIndex]->getContent()->canDefeat(gameArea[defender.fieldIndex]->getContent()->getType())) {
+        if(gameArea[defender.fieldIndex]->getContent()->getType() == CardType::FLAG) {
+            Color winnerColor = gameArea[attacker.fieldIndex]->getContent()->getColor();
+            triggerVictory(winnerColor);
+        }
+
+        tempCard = gameArea[defender.fieldIndex]->removeCard();
+        discardPile[getNextEmptyDiscardPileIndex()]->placeCard(std::move(tempCard));
+
+        tempCard = gameArea[attacker.fieldIndex]->removeCard();
+        gameArea[defender.fieldIndex]->placeCard(std::move(tempCard));
+    } else {
+        tempCard = gameArea[attacker.fieldIndex]->removeCard();
+        discardPile[getNextEmptyDiscardPileIndex()]->placeCard(std::move(tempCard));
+    }
+    attacker.empty();
+    defender.empty();
+}
+
+void Game::triggerVictory(Color winner) {
+    if(winner == Color::RED) {
+        gameState = GameState::RED_WINS;
+    } else if(winner == Color::BLUE) {
+        gameState = GameState::BLUE_WINS;
+    }
+}
+
+void Game::initDiscardPile() {
+
+    size_t x, y;
+    for (int i = 0; i < 16; ++i) {
+        y = 110 + 25 * static_cast<size_t >(i);
+        for (int j = 0; j < 5; ++j) {
+            x = 520 + 50 * static_cast<size_t>(j);
+            std::unique_ptr<Field> newField = std::unique_ptr<Field>(new Field(x, y, true));
+            discardPile.emplace_back(std::move(newField));
+        }
+    }
+}
+
+void Game::renderDiscardPile() {
+    int fieldX, fieldY;
+    CardType typeToRender;
+    Color cardColor;
+    for (int i = 0; i < discardPile.size(); ++i) {
+        fieldX = discardPile[i]->getX();
+        fieldY = discardPile[i]->getY();
+        if(discardPile[i]->getContent() != nullptr) {
+            typeToRender = discardPile[i]->getContent()->getType();
+            cardColor = discardPile[i]->getContent()->getColor();
+            display->renderField(fieldX, fieldY, false, cardColor, typeToRender);
+        }
+    }
+}
+
+int Game::getNextEmptyDiscardPileIndex() {
+    for (int i = 0; i < discardPile.size(); ++i) {
+        if(discardPile[i]->getContent() == nullptr) {
+            return i;
         }
     }
 }

@@ -33,6 +33,7 @@ private:
     //Game init
     void initButtons();
     void initGameArea();
+    void initDiscardPile();
     void initCardArea();
 
     //Main Game Loop
@@ -46,8 +47,10 @@ private:
     void renderButtons();
     void renderGameArea();
     void renderCardArea();
+    void renderDiscardPile();
     void clearHighlights();
     void changeFacingOfCards(Color color, bool faceDown);
+    void revealCombatants();
 
     //Input
     void handleEvents();
@@ -64,6 +67,9 @@ private:
     bool playerHasValidMoves();
     bool validMovesExistFromField(int fieldIndex);
     std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index);
+    void resolveBattle();
+    void triggerVictory(Color color);
+    int getNextEmptyDiscardPileIndex();
 
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
@@ -79,6 +85,7 @@ private:
     std::vector<std::unique_ptr<Field>> gameArea;
     //std::vector<std::vector<std::unique_ptr<Field>>> cardArea;
     std::vector<std::unique_ptr<Field>> cardArea;
+    std::vector<std::unique_ptr<Field>> discardPile;
 
 };
 
