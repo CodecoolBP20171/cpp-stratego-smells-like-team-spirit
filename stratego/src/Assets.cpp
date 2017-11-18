@@ -84,6 +84,15 @@ Assets::Assets() {
     tempRect.x = 0;
     tempRect.y = 880;
     UIElements[UIElement::MAP_OVERLAY_BOTTOM_SHROUDED] = tempRect;
+
+    tempRect.h = 280;
+    tempRect.w = 250;
+    tempRect.x = 500;
+    tempRect.y = 620;
+    UIElements[UIElement::MSG_WAIT_FOR_BLUE] = tempRect;
+
+    tempRect.y = 900;
+    UIElements[UIElement::MSG_WAIT_FOR_RED] = tempRect;
 }
 
 

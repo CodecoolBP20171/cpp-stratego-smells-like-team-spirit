@@ -199,13 +199,13 @@ ProcessedEvent Display::processEvent(int x, int y) {
 
 int Display::processGameAreaClick(int x, int y) {
     int fieldIndex;
-    fieldIndex = (floor((y-10)/50)*10)+ceil((x-10)/50);
+    fieldIndex = (((y-10)/50)*10)+((x-10)/50);
     return fieldIndex;
 }
 
 int Display::processSideAreaClick(int x, int y) {
     int sideIndex;
-    sideIndex = (floor((y-110)/50)*5)+ceil((x-520)/50);
+    sideIndex = (((y-110)/50)*5)+((x-520)/50);
     return sideIndex;
 }
 
@@ -220,6 +220,19 @@ void Display::renderMapOverlay(Color color) {
     } else {
         destination.y = 210;
         SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
+    }
+}
+
+void Display::renderWaitMsg(Color color) {
+    SDL_Rect destination;
+    destination.h = 280;
+    destination.w = 250;
+    destination.x = 510;
+    destination.y = 110;
+    if(color == Color::BLUE) {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MSG_WAIT_FOR_BLUE), &destination);
+    } else {
+        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MSG_WAIT_FOR_RED), &destination);
     }
 }
 

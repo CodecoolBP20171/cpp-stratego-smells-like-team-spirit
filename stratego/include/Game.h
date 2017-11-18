@@ -22,7 +22,6 @@ public:
     void start();
 
     //Init
-    void populateCardArea();
     void placeCard();
 
 
@@ -37,6 +36,7 @@ private:
     void initCardArea();
 
     //Main Game Loop
+    void populateCardArea();
     void setMove();
     void hideCardsDuringTransition();
     void moveCard();
@@ -46,6 +46,7 @@ private:
     void renderButtons();
     void renderGameArea();
     void renderCardArea();
+    void clearHighlights();
     void changeFacingOfCards(Color color, bool faceDown);
 
     //Input
@@ -69,6 +70,8 @@ private:
 
     Button restart;
     Button exit;
+    ProcessedEvent attacker;
+    ProcessedEvent defender;
     ProcessedEvent source;
     ProcessedEvent destination;
     std::unique_ptr<Display> display;

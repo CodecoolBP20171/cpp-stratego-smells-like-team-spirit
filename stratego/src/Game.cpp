@@ -16,6 +16,7 @@
 #include "../cards/CardColonel.hpp"
 #include "../cards/CardGeneral.hpp"
 #include "../cards/CardMarshall.hpp"
+#include <algorithm>
 
 void Game::start() {
     //TODO contains main loop, starts with clearing screen, checking gameState and variables and rendering screen accordingly.
@@ -66,23 +67,37 @@ void Game::start() {
         if(gameState == GameState::BLUE_INIT_START ||
                 gameState == GameState::RED_INIT_START) {
             populateCardArea();
+
         } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS &&
                 isCardAreaEmpty()) {
             changeFacingOfCards(Color::BLUE, true);
             gameState = GameState::RED_INIT_START;
+
         } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
                 isCardAreaEmpty()) {
             changeFacingOfCards(Color::RED, true);
             changeFacingOfCards(Color::BLUE, false);
-            gameState = GameState::BLUE_MOVE_IN_PROGRESS;
-            std::cout << "Blue move in progress...\n";
+            gameState = GameState::WAITING_FOR_BLUE;
+
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
             if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_RED;
+            changeFacingOfCards(Color::BLUE, false);
+
+        } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
+            if(!playerHasValidMoves()) gameState = GameState::WAITING_FOR_BLUE;
+            changeFacingOfCards(Color::RED, false);
+
+        } else if(gameState == GameState::WAITING_FOR_BLUE) {
+            changeFacingOfCards(Color::RED, true);
+            changeFacingOfCards(Color::BLUE, true);
+            display->renderWaitMsg(Color::BLUE);
+
         } else if(gameState == GameState::WAITING_FOR_RED) {
-            std::cout << "waiting for red";
+            changeFacingOfCards(Color::RED, true);
+            changeFacingOfCards(Color::BLUE, true);
+            display->renderWaitMsg(Color::RED);
         }
         if(!source.isEmpty() && !destination.isEmpty()){
-            std::cout << "trying to move card" << std::endl;
             moveCard();
         }
         display->renderPresent();
@@ -125,6 +140,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -135,6 +151,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -204,17 +221,28 @@ void Game::moveCard() {
         tempCard = gameArea[source.fieldIndex]->removeCard();
         gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
         gameArea[source.fieldIndex]->unhighlight();
-        source.empty();
-        destination.empty();
 
     } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
         tempCard = cardArea[source.sideAreaIndex]->removeCard();
         gameArea[destination.fieldIndex]->placeCard(std::move(tempCard));
         cardArea[source.sideAreaIndex]->unhighlight();
-        source.empty();
-        destination.empty();
-
     }
+
+    if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+        gameState = GameState::WAITING_FOR_RED;
+        gameArea[source.fieldIndex]->highlight();
+        gameArea[destination.fieldIndex]->highlight();
+    }
+
+    if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
+        gameState = GameState::WAITING_FOR_BLUE;
+        gameArea[source.fieldIndex]->highlight();
+        gameArea[destination.fieldIndex]->highlight();
+    }
+
+    source.empty();
+    destination.empty();
+
 }
 
 void Game::hideCardsDuringTransition() {
@@ -399,19 +427,30 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handleEvents() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
-        //std::cout << "field index: " << event.fieldIndex << std::endl;
-        //std::cout << "side index: " << event.sideAreaIndex << std::endl;
-        //std::cout << "restart: " << event.restartBtn << std::endl;
-        //std::cout << "exit:" << event.exitBtn << std::endl;
+        std::cout << "field index: " << event.fieldIndex << std::endl;
+        std::cout << "side index: " << event.sideAreaIndex << std::endl;
+        std::cout << "restart: " << event.restartBtn << std::endl;
+        std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
+
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
             evaluateInitPhaseClickEvent(event);
         }
         if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
                 gameState == GameState::RED_MOVE_IN_PROGRESS) {
-            evaluateBattlePhaseClickEvent(event);
+            if(event.getClickedArea() == ClickedArea::GAME_AREA) {
+                evaluateBattlePhaseClickEvent(event);
+            }
+        }
+        if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
+            clearHighlights();
+            gameState = GameState::BLUE_MOVE_IN_PROGRESS;
+        }
+        if(gameState == GameState::WAITING_FOR_RED && event.getClickedArea() == ClickedArea::GAME_AREA) {
+            clearHighlights();
+            gameState = GameState::RED_MOVE_IN_PROGRESS;
         }
 
     }
@@ -520,7 +559,37 @@ Color Game::getCurrentPlayerColor() {
 
 void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
     //TODO Check if player has valid moves to make
+    Color currentPlayerColor = getCurrentPlayerColor();
+    std::vector<int> validFieldIndeces;
+    unsigned char moveDist;
 
+    if(!source.isEmpty()) {
+        moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
+        validFieldIndeces = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
+    }
+
+    if(gameArea[event.fieldIndex]->getContent() == nullptr) {
+        if(std::find(validFieldIndeces.begin(), validFieldIndeces.end(), event.fieldIndex) != validFieldIndeces.end()) {
+            destination = event;
+            gameArea[source.fieldIndex]->unhighlight();
+        }
+    } else {
+        if(source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
+            gameArea[source.fieldIndex]->unhighlight();
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() != currentPlayerColor) {
+            if(std::find(validFieldIndeces.begin(), validFieldIndeces.end(), event.fieldIndex) != validFieldIndeces.end()) {
+                defender = event;
+                attacker = source;
+                std::cout << "attacker: " << attacker.fieldIndex << std::endl;
+                std::cout << "defender: " << defender.fieldIndex << std::endl;
+            }
+        }
+    }
 }
 
 bool Game::playerHasValidMoves() {
@@ -559,13 +628,13 @@ bool Game::validMovesExistFromField(int fieldIndex) {
 std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index) {
     //TODO Refactor this mess! :(
     std::vector<int> result;
-    std::cout << "index: " << index << std::endl;
+    //std::cout << "index: " << index << std::endl;
     Color currentPlayerColor = getCurrentPlayerColor();
     double gameAreaDiameter= 10;
     double rightEdge = ((ceil(index/gameAreaDiameter))*gameAreaDiameter)-1;
-    std::cout << "right edge: " << rightEdge << std::endl;
+    //std::cout << "right edge: " << rightEdge << std::endl;
     double leftEdge = ((floor(index/gameAreaDiameter))*gameAreaDiameter);
-    std::cout << "left edge: " << leftEdge << std::endl;
+    //std::cout << "left edge: " << leftEdge << std::endl;
 
     //Collect all available indeces above, break loop if edge/obstacle or after finding enemy
     for (int i = 1; i <= moveDist; ++i) {
@@ -648,13 +717,21 @@ std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int
     }
 
     //DEBUG
-    std::cout << "Valid move indeces for " << index << " ";
-    for (int k = 0; k < result.size(); ++k) {
-        std::cout << result[k] << " ";
-    }
-    std::cout << std::endl;
+    //std::cout << "Valid move indeces for " << index << " ";
+    //for (int k = 0; k < result.size(); ++k) {
+    //    std::cout << result[k] << " ";
+    //}
+    //std::cout << std::endl;
 
     return result;
+}
+
+void Game::clearHighlights() {
+    for (int i = 0; i < gameArea.size(); ++i) {
+        if(gameArea[i]->getIsHighlighted()) {
+            gameArea[i]->unhighlight();
+        }
+    }
 }
 
 
