@@ -82,7 +82,7 @@ Assets::Assets() {
     tempRect.h = 250;
     tempRect.w = 500;
     tempRect.x = 0;
-    tempRect.y = 920;
+    tempRect.y = 930;
     UIElements[UIElement::MAP_OVERLAY_BOTTOM_SHROUDED] = tempRect;
 
     tempRect.h = 50;

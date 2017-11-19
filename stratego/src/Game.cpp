@@ -351,10 +351,10 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handlePlayerClicks() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
-        std::cout << "field index: " << event.fieldIndex << std::endl;
-        std::cout << "side index: " << event.sideAreaIndex << std::endl;
-        std::cout << "restart: " << event.restartBtn << std::endl;
-        std::cout << "exit:" << event.exitBtn << std::endl;
+        //std::cout << "field index: " << event.fieldIndex << std::endl;
+        //std::cout << "side index: " << event.sideAreaIndex << std::endl;
+        //std::cout << "restart: " << event.restartBtn << std::endl;
+        //std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
 
@@ -482,11 +482,6 @@ void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
     Color currentPlayerColor = getCurrentPlayerColor();
     unsigned char moveDist;
 
-    //if(!source.isEmpty()) {
-    //    moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
-    //    possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
-    //}
-
     if(gameArea[event.fieldIndex]->getContent() == nullptr) {
         if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
             destination = event;
@@ -504,11 +499,8 @@ void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
             if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
                 defender = event;
                 attacker = source;
-                std::cout << "attacker: " << attacker.fieldIndex << std::endl;
-                std::cout << "defender: " << defender.fieldIndex << std::endl;
                 if(currentPlayerColor == Color::BLUE) {
                     gameState = GameState::WAITING_FOR_RED;
-                    std::cout << "setting gamestate to: " << static_cast<int>(gameState) << std::endl;
                 } else if(currentPlayerColor == Color::RED) {
                     gameState = GameState::WAITING_FOR_BLUE;
                 }
@@ -624,13 +616,6 @@ std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int
             break;
         }
     }
-
-    //DEBUG
-    //std::cout << "Valid move indeces for " << index << " ";
-    //for (int k = 0; k < result.size(); ++k) {
-    //    std::cout << result[k] << " ";
-    //}
-    //std::cout << std::endl;
 
     return result;
 }
