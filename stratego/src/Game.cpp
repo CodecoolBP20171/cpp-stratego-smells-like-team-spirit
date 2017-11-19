@@ -19,112 +19,35 @@
 #include <algorithm>
 
 void Game::start() {
-    //TODO contains main loop, starts with clearing screen, checking gameState and variables and rendering screen accordingly.
-
-    //Testing card
-    //std::unique_ptr<Card> testCard = std::unique_ptr<CardBomb>(new CardBomb(Color::BLUE));
-    //std::cout << "card trying to defeat flag: " << testCard->canDefeat(CardType::FLAG);
-    //std::cout << "card trying to defeat marshall: " << testCard->canDefeat(CardType::MARSHALL);
-
-    //Testing field, adding, removing content etc.
-    //std::unique_ptr<Field> testField = std::unique_ptr<Field>(new Field(10, 10, true));
-    //if(testField->getContent() == nullptr) {
-    //    std::cout << "Field content is nullptr" << std::endl;
-    //}
-    //testField->placeCard(std::move(testCard));
-    //if(testField->getContent() == nullptr) {
-    //    std::cout << "Field content is nullptr" << std::endl;
-    //} else {
-    //    if(testCard == nullptr) {
-    //        std::cout << "test card became nullptr" << std::endl;
-    //    }
-    //    std::cout << "Field content: " << static_cast<int>(testField->getContent()->getType()) << std::endl;
-    //}
-    //std::cout << "\nremoving from Field back to testCard" << std::endl;
-    //testCard = testField->removeCard();
-    //if(testCard == nullptr) {
-    //    std::cout << "test card is nullptr" << std::endl;
-    //} else {
-    //    std::cout << "test card TYPE: " << static_cast<int>(testCard->getType())<<std::endl;
-    //}
-    //if(testField->getContent() == nullptr) {
-    //    std::cout << "field content is nullptr" << std::endl;
-    //}
 
     display = std::unique_ptr<Display>(new Display());
     display->init("Stratego", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
 
     while(gameState != GameState::EXIT) {
         display->handleEvents();
-        display->update();
         display->render();
-        if(!source.isEmpty()) renderAvailableMoves();
-        if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
-            display->renderMapOverlay(Color::BLUE);
-            renderCardArea();
-        }
-        if(gameState == GameState::RED_INIT_IN_PROGRESS) {
-            display->renderMapOverlay(Color::RED);
-            renderCardArea();
-        }
-        handleEvents();
         renderButtons();
         renderGameArea();
-        if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
-           gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            renderDiscardPile();
-            checkIfTied();
-            if(!source.isEmpty()) {
-                unsigned char moveDist;
-                moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
-                possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
-            }
-        }
+
         if(gameState == GameState::BLUE_INIT_START ||
-                gameState == GameState::RED_INIT_START) {
+           gameState == GameState::RED_INIT_START) {
             populateCardArea();
-
-        } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS &&
-                isCardAreaEmpty()) {
-            changeFacingOfCards(Color::BLUE, true);
-            gameState = GameState::RED_INIT_START;
-
-        } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
-                isCardAreaEmpty()) {
-            changeFacingOfCards(Color::RED, true);
-            changeFacingOfCards(Color::BLUE, false);
-            gameState = GameState::WAITING_FOR_BLUE;
-
-        } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_RED;
-            changeFacingOfCards(Color::BLUE, false);
-            resolveBattle();
-
-        } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
-            if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_BLUE;
-            changeFacingOfCards(Color::RED, false);
-            resolveBattle();
-
-        } else if(gameState == GameState::WAITING_FOR_BLUE) {
-            changeFacingOfCards(Color::RED, true);
-            changeFacingOfCards(Color::BLUE, true);
-            renderDiscardPile();
-            revealCombatants();
-            display->renderWaitMsg(Color::BLUE);
-
-        } else if(gameState == GameState::WAITING_FOR_RED) {
-            changeFacingOfCards(Color::RED, true);
-            changeFacingOfCards(Color::BLUE, true);
-            renderDiscardPile();
-            revealCombatants();
-            display->renderWaitMsg(Color::RED);
-        } else if(gameState == GameState::BLUE_WINS) {
-            display->renderVictory(GameState::BLUE_WINS);
-        } else if(gameState == GameState::RED_WINS) {
-            display->renderVictory(GameState::RED_WINS);
-        } else if(gameState == GameState::TIED) {
-            display->renderVictory(GameState::TIED);
+        } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+                gameState == GameState::RED_INIT_IN_PROGRESS) {
+            handleInitInProgress();
+        } else if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
+           gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+            handlePlayerMoveInProgress();
+        } else if(gameState == GameState::WAITING_FOR_BLUE ||
+                gameState == GameState::WAITING_FOR_RED) {
+            handleWaitForNextPlayer();
+        } else if(gameState == GameState::RED_WINS ||
+                gameState == GameState::BLUE_WINS ||
+                gameState == GameState::TIED) {
+            handleVictory();
         }
+
+        handlePlayerClicks();
         if(!source.isEmpty() && !destination.isEmpty()){
             moveCard();
         }
@@ -134,8 +57,8 @@ void Game::start() {
 }
 
 void Game::populateCardArea() {
-    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
@@ -153,7 +76,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                //amountToSpawn = 1;
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -164,7 +87,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                //amountToSpawn = 1;
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -425,7 +348,7 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
     }
 }
 
-void Game::handleEvents() {
+void Game::handlePlayerClicks() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
         std::cout << "field index: " << event.fieldIndex << std::endl;
@@ -816,6 +739,83 @@ void Game::checkIfTied() {
     if(!playerHasValidMoves(Color::RED) &&
             !playerHasValidMoves(Color::BLUE)) {
         gameState = GameState::TIED;
+    }
+}
+
+void Game::handlePlayerMoveInProgress() {
+
+    renderDiscardPile();
+    checkIfTied();
+    if(!possibleMoves.empty()) renderAvailableMoves();
+    if(!source.isEmpty()) {
+        unsigned char moveDist;
+        moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
+        possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
+    }
+
+    if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_RED;
+        changeFacingOfCards(Color::BLUE, false);
+        resolveBattle();
+
+    } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
+        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_BLUE;
+        changeFacingOfCards(Color::RED, false);
+        resolveBattle();
+    }
+}
+
+void Game::handleWaitForNextPlayer() {
+
+    if(gameState == GameState::WAITING_FOR_BLUE) {
+        changeFacingOfCards(Color::RED, true);
+        changeFacingOfCards(Color::BLUE, true);
+        renderDiscardPile();
+        revealCombatants();
+        display->renderWaitMsg(Color::BLUE);
+
+    } else if(gameState == GameState::WAITING_FOR_RED) {
+        changeFacingOfCards(Color::RED, true);
+        changeFacingOfCards(Color::BLUE, true);
+        renderDiscardPile();
+        revealCombatants();
+        display->renderWaitMsg(Color::RED);
+    }
+    possibleMoves.clear();
+}
+
+void Game::handleInitInProgress() {
+    if(gameState == GameState::BLUE_INIT_IN_PROGRESS) {
+        display->renderMapOverlay(Color::BLUE);
+        renderCardArea();
+    }
+
+    if(gameState == GameState::RED_INIT_IN_PROGRESS) {
+        display->renderMapOverlay(Color::RED);
+        renderCardArea();
+    }
+
+    if(gameState == GameState::BLUE_INIT_IN_PROGRESS &&
+              isCardAreaEmpty()) {
+        changeFacingOfCards(Color::BLUE, true);
+        gameState = GameState::RED_INIT_START;
+
+    } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
+              isCardAreaEmpty()) {
+        changeFacingOfCards(Color::RED, true);
+        changeFacingOfCards(Color::BLUE, false);
+        gameState = GameState::WAITING_FOR_BLUE;
+
+    }
+}
+
+void Game::handleVictory() {
+    if(gameState == GameState::BLUE_WINS) {
+        display->renderVictory(GameState::BLUE_WINS);
+    } else if(gameState == GameState::RED_WINS) {
+        display->renderVictory(GameState::RED_WINS);
+    } else if(gameState == GameState::TIED) {
+        display->renderVictory(GameState::TIED);
     }
 }
 

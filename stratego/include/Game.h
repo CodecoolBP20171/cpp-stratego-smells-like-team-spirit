@@ -34,6 +34,10 @@ private:
     void moveCard();
     bool isCardAreaEmpty();
     void checkIfTied();
+    void handlePlayerMoveInProgress();
+    void handleWaitForNextPlayer();
+    void handleInitInProgress();
+    void handleVictory();
 
     //Rendering
     void renderButtons();
@@ -46,7 +50,7 @@ private:
     void revealCombatants();
 
     //Input
-    void handleEvents();
+    void handlePlayerClicks();
     void restartGame();
     Color getCurrentPlayerColor();
 
@@ -76,7 +80,6 @@ private:
     std::unique_ptr<Display> display;
     GameState gameState;
     std::vector<std::unique_ptr<Field>> gameArea;
-    //std::vector<std::vector<std::unique_ptr<Field>>> cardArea;
     std::vector<std::unique_ptr<Field>> cardArea;
     std::vector<std::unique_ptr<Field>> discardPile;
 

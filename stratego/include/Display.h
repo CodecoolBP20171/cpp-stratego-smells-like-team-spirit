@@ -22,12 +22,13 @@ public:
     ~Display() = default;
 
     void init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
+
+    bool isIsRunning() const;
+
     void handleEvents();
-    void update();
     void render();
     void renderPresent();
     void clean();
-    bool running();
     void renderField(int x, int y, bool highlighted);
     void renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard);
     void renderField(int x, int y, bool highlighted, Color cardBackColor);
@@ -37,8 +38,6 @@ public:
     void renderVictory(GameState victory);
     void renderAvailableMove(int x, int y);
 
-    SDL_Renderer* renderer;
-    SDL_Texture* background;
     ProcessedEvent getEventFromQueue();
     bool isEventQueueEmpty();
 
@@ -50,8 +49,10 @@ private:
     int processSideAreaClick(int x, int y);
     //SDL_Event event;
     std::queue<ProcessedEvent> eventQueue;
-    bool isRunning;
 
+    bool isRunning;
+    SDL_Renderer* renderer;
+    SDL_Texture* textureAtlas;
     SDL_Window* window;
     Assets assets;
 
