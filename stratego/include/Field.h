@@ -27,6 +27,7 @@ public:
     void highlight();
     void unhighlight();
 
+    void setIsTraversable(bool isTraversable);
 
 private:
     size_t x;

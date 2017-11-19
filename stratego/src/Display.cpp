@@ -6,7 +6,6 @@
 #include <iostream>
 #include <SDL_image.h>
 #include <Game.h>
-#include "Display.h"
 
 void Display::init(const char *title, int xpos, int ypos, int width, int height, bool fullscreen)
 {
@@ -29,7 +28,6 @@ void Display::init(const char *title, int xpos, int ypos, int width, int height,
         renderer = SDL_CreateRenderer(window, -1, 0);
         if(renderer)
         {
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             std::cout << "Renderer created..." << std::endl;
         }
 
@@ -38,7 +36,7 @@ void Display::init(const char *title, int xpos, int ypos, int width, int height,
         if(!tmpSurface) {
             std::cout << "couldn't load img " << SDL_GetError() << std::endl;
         }
-        background = SDL_CreateTextureFromSurface(renderer, tmpSurface);
+        textureAtlas = SDL_CreateTextureFromSurface(renderer, tmpSurface);
         SDL_FreeSurface(tmpSurface);
 
     } else {
@@ -53,22 +51,19 @@ void Display::handleEvents() {
     int mouse_x, mouse_y;
 
     switch (event.type){
-        case SDL_QUIT: isRunning = false;
+        case SDL_QUIT: {
             processedEvent.exitBtn = true;
             eventQueue.push(processedEvent);
             break;
+        }
         case SDL_MOUSEBUTTONDOWN: {
             SDL_GetMouseState(&mouse_x, &mouse_y);
-            std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
+            //std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
             processedEvent = processEvent(mouse_x, mouse_y);
             eventQueue.push(processedEvent);
         }
         default: break;
     }
-}
-
-void Display::update() {
-
 }
 
 void Display::render()
@@ -79,25 +74,9 @@ void Display::render()
     source.x = 0;
     source.y = 0;
 
-    destination.h = 50;
-    destination.w = 50;
-    destination.x = 110;
-    destination.y = 110;
-
     SDL_RenderClear(renderer);
     //This is where we could add stuff to render
-    SDL_RenderCopy(renderer, background, &source, NULL);
-    //SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
-    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL); ++i) {
-    //    destination.x = 60 + (i*50);
-    //    destination.y = 60;
-    //    SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::RED), &destination);
-    //    SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
-    //    destination.y = 410;
-    //    SDL_RenderCopy(renderer, background, assets.getTexturePosition(static_cast<CardType>(i), Color::BLUE), &destination);
-    //}
-
-    //SDL_RenderPresent(renderer);
+    SDL_RenderCopy(renderer, textureAtlas, &source, NULL);
 }
 
 void Display::clean() {
@@ -107,9 +86,6 @@ void Display::clean() {
     std::cout << "Cleaned up after Display class..." << std::endl;
 }
 
-bool Display::running() {
-    return isRunning;
-}
 
 void Display::renderField(int x, int y, bool highlighted) {
     if(highlighted) {
@@ -118,7 +94,7 @@ void Display::renderField(int x, int y, bool highlighted) {
         destination.w = 50;
         destination.x = x;
         destination.y = y;
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
@@ -134,9 +110,9 @@ void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardT
     destination.x = x;
     destination.y = y;
 
-    SDL_RenderCopy(renderer, background, assets.getTexturePosition(faceUpCard, cardColor), &destination);
+    SDL_RenderCopy(renderer, textureAtlas, assets.getTexturePosition(faceUpCard, cardColor), &destination);
     if(highlighted) {
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
@@ -149,19 +125,19 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
     destination.y = y;
 
     if(cardBackColor == Color::BLUE) {
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
     } else {
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::RED_CARD_BACK), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::RED_CARD_BACK), &destination);
     }
 
     if(highlighted) {
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 
 }
 
 void Display::renderButton(SDL_Rect destination, UIElement texture) {
-    SDL_RenderCopy(renderer, background, assets.getUIElement(texture), &destination);
+    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(texture), &destination);
 }
 
 ProcessedEvent Display::getEventFromQueue() {
@@ -199,28 +175,84 @@ ProcessedEvent Display::processEvent(int x, int y) {
 
 int Display::processGameAreaClick(int x, int y) {
     int fieldIndex;
-    fieldIndex = (floor((y-10)/50)*10)+ceil((x-10)/50);
+    fieldIndex = (((y-10)/50)*10)+((x-10)/50);
     return fieldIndex;
 }
 
 int Display::processSideAreaClick(int x, int y) {
     int sideIndex;
-    sideIndex = (floor((y-110)/50)*5)+ceil((x-520)/50);
+    sideIndex = (((y-110)/50)*5)+((x-520)/50);
     return sideIndex;
 }
 
 void Display::renderMapOverlay(Color color) {
     SDL_Rect destination;
-    destination.h = 300;
+    destination.h = 250;
     destination.w = 500;
     destination.x = 10;
     destination.y = 10;
     if(color == Color::BLUE) {
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
+        destination.y = 260;
+        destination.h = 50;
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_TOP_MAP), &destination);
     } else {
+        destination.y = 260;
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
         destination.y = 210;
-        SDL_RenderCopy(renderer, background, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
+        destination.h = 50;
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_BOTTOM_MAP), &destination);
     }
+}
+
+void Display::renderWaitMsg(Color color) {
+    SDL_Rect destination;
+    destination.h = 280;
+    destination.w = 250;
+    destination.x = 510;
+    destination.y = 110;
+    if(color == Color::BLUE) {
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MSG_WAIT_FOR_BLUE), &destination);
+    } else {
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MSG_WAIT_FOR_RED), &destination);
+    }
+}
+
+void Display::renderVictory(GameState victory) {
+    SDL_Rect destination;
+    destination.h = 150;
+    destination.w = 500;
+    destination.x = 10;
+    destination.y = 10;
+
+    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_COMMON_TOP), &destination);
+    destination.y = 360;
+    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_COMMON_BOTTOM), &destination);
+
+    destination.h = 200;
+    destination.y = 160;
+    if(victory == GameState::BLUE_WINS) {
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_BLUE_MID), &destination);
+    } else if(victory == GameState::RED_WINS) {
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_RED_MID), &destination);
+    } else if(victory == GameState::TIED) {
+        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_TIED), &destination);
+    }
+
+}
+
+void Display::renderAvailableMove(int x, int y) {
+    SDL_Rect destination;
+    destination.h = 50;
+    destination.w = 50;
+    destination.x = x;
+    destination.y = y;
+
+    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::AVAILABLE_MOVE), &destination);
+}
+
+bool Display::isIsRunning() const {
+    return isRunning;
 }
 
 

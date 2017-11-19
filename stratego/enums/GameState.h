@@ -14,7 +14,7 @@ enum class GameState {
     BLUE_MOVE_IN_PROGRESS, WAITING_FOR_RED, RED_MOVE_IN_PROGRESS, WAITING_FOR_BLUE,
 
     //Game over states
-    BLUE_WINS, RED_WINS,
+    BLUE_WINS, RED_WINS, TIED,
 
     EXIT
 };
