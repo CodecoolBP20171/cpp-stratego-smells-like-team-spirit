@@ -255,4 +255,8 @@ bool Display::isIsRunning() const {
     return isRunning;
 }
 
+void Display::delay(int ms) {
+    SDL_Delay(ms);
+}
+
 

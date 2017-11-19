@@ -52,19 +52,20 @@ void Game::start() {
             moveCard();
         }
         display->renderPresent();
+        display->delay(0);
     }
     display->clean();
 }
 
 void Game::populateCardArea() {
-    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
         if(gameState == GameState::BLUE_INIT_START) {
             colorToSpawnWith = Color::BLUE;
-        } else {
+        } else if (gameState == GameState::RED_INIT_START){
             colorToSpawnWith = Color::RED;
         }
 
@@ -76,7 +77,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 2;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -87,7 +88,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -472,7 +473,8 @@ void Game::changeFacingOfCards(Color color, bool faceDown){
 
 Color Game::getCurrentPlayerColor() {
     if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
-       gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+       gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
+       gameState == GameState::WAITING_FOR_BLUE ) {
         return Color::BLUE;
     }
     return Color::RED;
@@ -518,19 +520,22 @@ bool Game::playerHasValidMoves(Color currentPlayerColor) {
         if(gameArea[i]->getContent() != nullptr) {
             if(gameArea[i]->getContent()->getColor() == currentPlayerColor) {
                 moveDist = gameArea[i]->getContent()->getMoveDistance();
-                validMoveIndeces = gatherNearbyValidFieldIndeces(moveDist, i);
-                if(!validMoveIndeces.empty()) return true;
+                validMoveIndeces = gatherNearbyValidFieldIndeces(moveDist, i, currentPlayerColor);
+                if(validMoveIndeces.size() > 0){
+                    return true;
+                } else {
+                    //std::cout << "valid moves not empty!";
+                }
             }
         }
     }
     return false;
 }
 
-std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index) {
+std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color currentPlayerColor) {
     //TODO Refactor this mess! :(
     std::vector<int> result;
     //std::cout << "index: " << index << std::endl;
-    Color currentPlayerColor = getCurrentPlayerColor();
     int gameAreaDiameter = 10;
     int rightEdge = ((index / gameAreaDiameter)*gameAreaDiameter) + gameAreaDiameter -1;
     //std::cout << "right edge: " << rightEdge << std::endl;
@@ -616,6 +621,11 @@ std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int
             break;
         }
     }
+    //std::cout << "valid indeces for: " << index << std::endl;
+    //for (int k = 0; k < result.size(); ++k) {
+    //    std::cout << result[k] << " ";
+    //}
+    //std::cout << std::endl;
 
     return result;
 }
@@ -731,11 +741,12 @@ void Game::handlePlayerMoveInProgress() {
 
     renderDiscardPile();
     checkIfTied();
+    Color currentPlayerColor = getCurrentPlayerColor();
     if(!possibleMoves.empty()) renderAvailableMoves();
     if(!source.isEmpty()) {
         unsigned char moveDist;
         moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
-        possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex);
+        possibleMoves = gatherNearbyValidFieldIndeces(moveDist, source.fieldIndex, currentPlayerColor);
     }
 
     if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
@@ -751,7 +762,7 @@ void Game::handlePlayerMoveInProgress() {
 }
 
 void Game::handleWaitForNextPlayer() {
-
+    checkIfTied();
     if(gameState == GameState::WAITING_FOR_BLUE) {
         changeFacingOfCards(Color::RED, true);
         changeFacingOfCards(Color::BLUE, true);

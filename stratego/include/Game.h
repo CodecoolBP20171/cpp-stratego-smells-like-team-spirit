@@ -62,7 +62,7 @@ private:
     //Battle phase input
     void evaluateBattlePhaseClickEvent(ProcessedEvent event);
     bool playerHasValidMoves(Color color);
-    std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index);
+    std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color color);
     void resolveBattle();
     void triggerVictory(Color color);
     int getNextEmptyDiscardPileIndex();

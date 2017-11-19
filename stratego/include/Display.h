@@ -37,6 +37,7 @@ public:
     void renderWaitMsg(Color color);
     void renderVictory(GameState victory);
     void renderAvailableMove(int x, int y);
+    void delay(int ms);
 
     ProcessedEvent getEventFromQueue();
     bool isEventQueueEmpty();
