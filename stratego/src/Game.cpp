@@ -58,8 +58,8 @@ void Game::start() {
 }
 
 void Game::populateCardArea() {
-    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
@@ -77,7 +77,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                //amountToSpawn = 2;
+                amountToSpawn = 2;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -88,7 +88,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                //amountToSpawn = 1;
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -361,7 +361,8 @@ void Game::handlePlayerClicks() {
 
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
-            evaluateInitPhaseClickEvent(event);
+            input.evaluateInitPhaseClickEvent(event, gameArea, cardArea, source, destination, getCurrentPlayerColor());
+            //evaluateInitPhaseClickEvent(event);
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
                 gameState == GameState::RED_MOVE_IN_PROGRESS) {
             if(event.getClickedArea() == ClickedArea::GAME_AREA) {
@@ -378,69 +379,71 @@ void Game::handlePlayerClicks() {
     }
 }
 
-void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
+//void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
+//
+//    Color currentPlayerColor;
+//    currentPlayerColor = getCurrentPlayerColor();
+//
+//    if(event.getClickedArea() == ClickedArea::GAME_AREA) {
+//        if(event.isInTerritory(currentPlayerColor)) {
+//            //initPhaseGameAreaClick(event);
+//            input.initPhaseGameAreaClick(event, gameArea, cardArea, source, destination);
+//        }
+//    } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
+//        //initPhaseSideAreaClick(event);
+//        input.initPhaseSideAreaClick(event, gameArea, cardArea, source, destination);
+//    }
+//}
+//
+//void Game::initPhaseGameAreaClick(ProcessedEvent event) {
+//    if(!source.isEmpty()) {
+//        if(gameArea[event.fieldIndex]->getContent() == nullptr) {
+//            destination = event;
+//        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
+//                event.fieldIndex != source.fieldIndex) {
+//            gameArea[source.fieldIndex]->unhighlight();
+//            gameArea[event.fieldIndex]->highlight();
+//            source = event;
+//        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
+//                event.fieldIndex == source.fieldIndex) {
+//            gameArea[source.fieldIndex]->unhighlight();
+//            source.empty();
+//        } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
+//            cardArea[source.sideAreaIndex]->unhighlight();
+//            gameArea[event.fieldIndex]->highlight();
+//            source = event;
+//        }
+//    } else {
+//        if(gameArea[event.fieldIndex]->getContent() != nullptr) {
+//            source = event;
+//            gameArea[source.fieldIndex]->highlight();
+//        }
+//    }
+//}
 
-    Color currentPlayerColor;
-    currentPlayerColor = getCurrentPlayerColor();
-
-    if(event.getClickedArea() == ClickedArea::GAME_AREA) {
-        if(event.isInTerritory(currentPlayerColor)) {
-            initPhaseGameAreaClick(event);
-        }
-    } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
-        initPhaseSideAreaClick(event);
-    }
-}
-
-void Game::initPhaseGameAreaClick(ProcessedEvent event) {
-    if(!source.isEmpty()) {
-        if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-            destination = event;
-        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-                event.fieldIndex != source.fieldIndex) {
-            gameArea[source.fieldIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-                event.fieldIndex == source.fieldIndex) {
-            gameArea[source.fieldIndex]->unhighlight();
-            source.empty();
-        } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
-            cardArea[source.sideAreaIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        }
-    } else {
-        if(gameArea[event.fieldIndex]->getContent() != nullptr) {
-            source = event;
-            gameArea[source.fieldIndex]->highlight();
-        }
-    }
-}
-
-void Game::initPhaseSideAreaClick(ProcessedEvent event) {
-    if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
-        if(source.isEmpty()) {
-            source = event;
-            cardArea[source.sideAreaIndex]->highlight();
-        } else {
-            if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-                    source.sideAreaIndex == event.sideAreaIndex) {
-                cardArea[source.sideAreaIndex]->unhighlight();
-                source.empty();
-            } else if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-                    source.sideAreaIndex != event.sideAreaIndex){
-                cardArea[source.sideAreaIndex]->unhighlight();
-                cardArea[event.sideAreaIndex]->highlight();
-                source = event;
-            } else if(source.getClickedArea() == ClickedArea::GAME_AREA) {
-                gameArea[source.fieldIndex]->unhighlight();
-                cardArea[event.sideAreaIndex]->highlight();
-                source = event;
-            }
-        }
-    }
-}
+//void Game::initPhaseSideAreaClick(ProcessedEvent event) {
+//    if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
+//        if(source.isEmpty()) {
+//            source = event;
+//            cardArea[source.sideAreaIndex]->highlight();
+//        } else {
+//            if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
+//                    source.sideAreaIndex == event.sideAreaIndex) {
+//                cardArea[source.sideAreaIndex]->unhighlight();
+//                source.empty();
+//            } else if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
+//                    source.sideAreaIndex != event.sideAreaIndex){
+//                cardArea[source.sideAreaIndex]->unhighlight();
+//                cardArea[event.sideAreaIndex]->highlight();
+//                source = event;
+//            } else if(source.getClickedArea() == ClickedArea::GAME_AREA) {
+//                gameArea[source.fieldIndex]->unhighlight();
+//                cardArea[event.sideAreaIndex]->highlight();
+//                source = event;
+//            }
+//        }
+//    }
+//}
 
 void Game::restartGame() {
     for (int i = 0; i < gameArea.size(); ++i) {

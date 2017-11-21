@@ -12,6 +12,7 @@
 #include "GameState.h"
 #include "Display.h"
 #include "Button.h"
+#include "InputParser.h"
 
 class Game {
     friend class Display;
@@ -71,6 +72,7 @@ private:
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
     std::vector<int> possibleMoves;
+    InputParser input;
     Button restart;
     Button exit;
     ProcessedEvent attacker;
