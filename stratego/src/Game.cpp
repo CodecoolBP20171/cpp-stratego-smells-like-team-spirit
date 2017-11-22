@@ -52,14 +52,14 @@ void Game::start() {
             moveCard();
         }
         display->renderPresent();
-        display->delay(0);
+        display->delay(10);
     }
     display->clean();
 }
 
 void Game::populateCardArea() {
-    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
@@ -77,7 +77,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                //amountToSpawn = 2;
+                amountToSpawn = 2;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -88,7 +88,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                //amountToSpawn = 1;
+                amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -192,19 +192,17 @@ void Game::initGameArea() {
             gameArea.emplace_back(std::move(newField));
         }
     }
+    //Creating western lake
     gameArea[42]->setIsTraversable(false);
     gameArea[43]->setIsTraversable(false);
     gameArea[52]->setIsTraversable(false);
     gameArea[53]->setIsTraversable(false);
 
+    //Creating eastern lake
     gameArea[46]->setIsTraversable(false);
     gameArea[47]->setIsTraversable(false);
     gameArea[56]->setIsTraversable(false);
     gameArea[57]->setIsTraversable(false);
-    //Setting all fields to highlighted for testing
-    //for (int k = 0; k < gameArea.size(); k++) {
-    //        gameArea[k]->highlight();
-    //    }
 }
 
 
@@ -218,11 +216,6 @@ void Game::initCardArea() {
             cardArea.emplace_back(std::move(newField));
         }
     }
-
-    //Testing if they exist and if highlight works
-    //for (int k = 0; k < cardArea.size(); k+=3) {
-    //        cardArea[k]->highlight();
-    //}
 }
 
 void Game::renderGameArea() {
@@ -352,20 +345,16 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handlePlayerClicks() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
-        //std::cout << "field index: " << event.fieldIndex << std::endl;
-        //std::cout << "side index: " << event.sideAreaIndex << std::endl;
-        //std::cout << "restart: " << event.restartBtn << std::endl;
-        //std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
 
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
-            evaluateInitPhaseClickEvent(event);
+            input->evaluateInitPhaseClickEvent(event, gameArea, cardArea, source, destination, getCurrentPlayerColor());
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
                 gameState == GameState::RED_MOVE_IN_PROGRESS) {
             if(event.getClickedArea() == ClickedArea::GAME_AREA) {
-                evaluateBattlePhaseClickEvent(event);
+                input->evaluatBattlePhaseClickEvent(event, gameArea, possibleMoves, source, destination, attacker, defender, getCurrentPlayerColor(), gameState);
             }
         } else if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
@@ -378,69 +367,6 @@ void Game::handlePlayerClicks() {
     }
 }
 
-void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
-
-    Color currentPlayerColor;
-    currentPlayerColor = getCurrentPlayerColor();
-
-    if(event.getClickedArea() == ClickedArea::GAME_AREA) {
-        if(event.isInTerritory(currentPlayerColor)) {
-            initPhaseGameAreaClick(event);
-        }
-    } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
-        initPhaseSideAreaClick(event);
-    }
-}
-
-void Game::initPhaseGameAreaClick(ProcessedEvent event) {
-    if(!source.isEmpty()) {
-        if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-            destination = event;
-        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-                event.fieldIndex != source.fieldIndex) {
-            gameArea[source.fieldIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-                event.fieldIndex == source.fieldIndex) {
-            gameArea[source.fieldIndex]->unhighlight();
-            source.empty();
-        } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
-            cardArea[source.sideAreaIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        }
-    } else {
-        if(gameArea[event.fieldIndex]->getContent() != nullptr) {
-            source = event;
-            gameArea[source.fieldIndex]->highlight();
-        }
-    }
-}
-
-void Game::initPhaseSideAreaClick(ProcessedEvent event) {
-    if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
-        if(source.isEmpty()) {
-            source = event;
-            cardArea[source.sideAreaIndex]->highlight();
-        } else {
-            if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-                    source.sideAreaIndex == event.sideAreaIndex) {
-                cardArea[source.sideAreaIndex]->unhighlight();
-                source.empty();
-            } else if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-                    source.sideAreaIndex != event.sideAreaIndex){
-                cardArea[source.sideAreaIndex]->unhighlight();
-                cardArea[event.sideAreaIndex]->highlight();
-                source = event;
-            } else if(source.getClickedArea() == ClickedArea::GAME_AREA) {
-                gameArea[source.fieldIndex]->unhighlight();
-                cardArea[event.sideAreaIndex]->highlight();
-                source = event;
-            }
-        }
-    }
-}
 
 void Game::restartGame() {
     for (int i = 0; i < gameArea.size(); ++i) {
@@ -480,38 +406,6 @@ Color Game::getCurrentPlayerColor() {
     return Color::RED;
 }
 
-void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
-    Color currentPlayerColor = getCurrentPlayerColor();
-    unsigned char moveDist;
-
-    if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-        if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
-            destination = event;
-            gameArea[source.fieldIndex]->unhighlight();
-        }
-    } else {
-        if(source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
-            gameArea[source.fieldIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() != currentPlayerColor) {
-            if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
-                defender = event;
-                attacker = source;
-                if(currentPlayerColor == Color::BLUE) {
-                    gameState = GameState::WAITING_FOR_RED;
-                } else if(currentPlayerColor == Color::RED) {
-                    gameState = GameState::WAITING_FOR_BLUE;
-                }
-                source.empty();
-                destination.empty();
-            }
-        }
-    }
-}
 
 bool Game::playerHasValidMoves(Color currentPlayerColor) {
     unsigned char moveDist;
@@ -533,101 +427,51 @@ bool Game::playerHasValidMoves(Color currentPlayerColor) {
 }
 
 std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color currentPlayerColor) {
-    //TODO Refactor this mess! :(
     std::vector<int> result;
-    //std::cout << "index: " << index << std::endl;
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::NORTH);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::EAST);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::SOUTH);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::WEST);
+    return result;
+}
+
+void Game::gatherViableMovesInDir(int index, unsigned char moveDist, Color currentPlayerColor, std::vector<int> &result, Direction dir) {
+
     int gameAreaDiameter = 10;
     int rightEdge = ((index / gameAreaDiameter)*gameAreaDiameter) + gameAreaDiameter -1;
-    //std::cout << "right edge: " << rightEdge << std::endl;
     int leftEdge = ((index / gameAreaDiameter)*gameAreaDiameter);
-    //std::cout << "left edge: " << leftEdge << std::endl;
 
-    //Collect all available indeces above, break loop if edge/obstacle or after finding enemy
+    int nextIndex;
+
+
     for (int i = 1; i <= moveDist; ++i) {
-        if ((index - (i * gameAreaDiameter)) >= 0) {
-            if (gameArea[index - (i * gameAreaDiameter)]->getContent() == nullptr) {
-                if( gameArea[index - (i * gameAreaDiameter)]->getIsTraversable()) {
-                    result.emplace_back(index - (i * gameAreaDiameter));
-                } else {
-                    break;
-                }
-            } else if (gameArea[index - (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index - (i * gameAreaDiameter));
-                break;
+        if(dir == Direction::EAST) {
+            nextIndex = index + i;
+            if(nextIndex > rightEdge) break;
+        } else if(dir == Direction::SOUTH) {
+            nextIndex = index + (i * gameAreaDiameter);
+            if(nextIndex > 99) break;
+        } else if(dir == Direction::WEST) {
+            nextIndex = index - i;
+            if(nextIndex < leftEdge) break;
+        } else if(dir == Direction::NORTH) {
+            nextIndex = index - (i * gameAreaDiameter);
+            if(nextIndex < 0) break;
+        }
+
+        if (gameArea[nextIndex]->getContent() == nullptr) {
+            if( gameArea[nextIndex]->getIsTraversable()) {
+                result.emplace_back(nextIndex);
             } else {
                 break;
             }
+        } else if (gameArea[nextIndex]->getContent()->getColor() != currentPlayerColor) {
+            result.emplace_back(nextIndex);
+            break;
         } else {
             break;
         }
     }
-
-    //Collect all available indeces below, break loop if edge/obstacle or after finding enemy
-    for (int i = 1; i <= moveDist; ++i) {
-        if ((index + (i * gameAreaDiameter)) <= 99) {
-            if (gameArea[index + (i * gameAreaDiameter)]->getContent() == nullptr) {
-                if(gameArea[index + (i * gameAreaDiameter)]->getIsTraversable()) {
-                    result.emplace_back(index + (i * gameAreaDiameter));
-                } else {
-                    break;
-                }
-            } else if (gameArea[index + (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index + (i * gameAreaDiameter));
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    //Collect all available indeces to the right, break loop if edge/obstacle or after finding enemy
-    for (int j = 1; j <= moveDist; ++j) {
-        if (index + j <= rightEdge) {
-            if(gameArea[index + j]->getContent() == nullptr){
-                if( gameArea[index + j]->getIsTraversable()) {
-                    result.emplace_back(index + j);
-                } else {
-                    break;
-                }
-            } else if(gameArea[index + j]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index + j);
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    //Collect all available indeces to the left, break loop if edge/obstacle or after finding enemy
-    for (int j = 1; j <= moveDist; ++j) {
-        if (index - j >= leftEdge) {
-            if(gameArea[index - j]->getContent() == nullptr){
-                if( gameArea[index - j]->getIsTraversable()) {
-                    result.emplace_back(index - j);
-                } else {
-                    break;
-                }
-            } else if(gameArea[index - j]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index - j);
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    //std::cout << "valid indeces for: " << index << std::endl;
-    //for (int k = 0; k < result.size(); ++k) {
-    //    std::cout << result[k] << " ";
-    //}
-    //std::cout << std::endl;
-
-    return result;
 }
 
 void Game::clearHighlights() {
@@ -801,7 +645,6 @@ void Game::handleInitInProgress() {
         changeFacingOfCards(Color::RED, true);
         changeFacingOfCards(Color::BLUE, false);
         gameState = GameState::WAITING_FOR_BLUE;
-
     }
 }
 
@@ -814,6 +657,3 @@ void Game::handleVictory() {
         display->renderVictory(GameState::TIED);
     }
 }
-
-
-
