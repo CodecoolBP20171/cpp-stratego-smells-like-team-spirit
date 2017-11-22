@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include <Direction.h>
 #include "Field.h"
 #include "Coordinate.h"
 #include "GameState.h"
@@ -64,6 +65,7 @@ private:
     void evaluateBattlePhaseClickEvent(ProcessedEvent event);
     bool playerHasValidMoves(Color color);
     std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color color);
+    void gatherViableMovesInDir(int index, unsigned char moveDist, Color color, std::vector<int> &result, Direction dir);
     void resolveBattle();
     void triggerVictory(Color color);
     int getNextEmptyDiscardPileIndex();

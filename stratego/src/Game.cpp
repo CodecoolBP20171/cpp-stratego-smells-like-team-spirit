@@ -52,7 +52,7 @@ void Game::start() {
             moveCard();
         }
         display->renderPresent();
-        display->delay(0);
+        display->delay(10);
     }
     display->clean();
 }
@@ -536,101 +536,51 @@ bool Game::playerHasValidMoves(Color currentPlayerColor) {
 }
 
 std::vector<int> Game::gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color currentPlayerColor) {
-    //TODO Refactor this mess! :(
     std::vector<int> result;
-    //std::cout << "index: " << index << std::endl;
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::NORTH);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::EAST);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::SOUTH);
+    gatherViableMovesInDir(index, moveDist, currentPlayerColor, result, Direction::WEST);
+    return result;
+}
+
+void Game::gatherViableMovesInDir(int index, unsigned char moveDist, Color currentPlayerColor, std::vector<int> &result, Direction dir) {
+
     int gameAreaDiameter = 10;
     int rightEdge = ((index / gameAreaDiameter)*gameAreaDiameter) + gameAreaDiameter -1;
-    //std::cout << "right edge: " << rightEdge << std::endl;
     int leftEdge = ((index / gameAreaDiameter)*gameAreaDiameter);
-    //std::cout << "left edge: " << leftEdge << std::endl;
 
-    //Collect all available indeces above, break loop if edge/obstacle or after finding enemy
+    int nextIndex;
+
+
     for (int i = 1; i <= moveDist; ++i) {
-        if ((index - (i * gameAreaDiameter)) >= 0) {
-            if (gameArea[index - (i * gameAreaDiameter)]->getContent() == nullptr) {
-                if( gameArea[index - (i * gameAreaDiameter)]->getIsTraversable()) {
-                    result.emplace_back(index - (i * gameAreaDiameter));
-                } else {
-                    break;
-                }
-            } else if (gameArea[index - (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index - (i * gameAreaDiameter));
-                break;
+        if(dir == Direction::EAST) {
+            nextIndex = index + i;
+            if(nextIndex > rightEdge) break;
+        } else if(dir == Direction::SOUTH) {
+            nextIndex = index + (i * gameAreaDiameter);
+            if(nextIndex > 99) break;
+        } else if(dir == Direction::WEST) {
+            nextIndex = index - i;
+            if(nextIndex < leftEdge) break;
+        } else if(dir == Direction::NORTH) {
+            nextIndex = index - (i * gameAreaDiameter);
+            if(nextIndex < 0) break;
+        }
+
+        if (gameArea[nextIndex]->getContent() == nullptr) {
+            if( gameArea[nextIndex]->getIsTraversable()) {
+                result.emplace_back(nextIndex);
             } else {
                 break;
             }
+        } else if (gameArea[nextIndex]->getContent()->getColor() != currentPlayerColor) {
+            result.emplace_back(nextIndex);
+            break;
         } else {
             break;
         }
     }
-
-    //Collect all available indeces below, break loop if edge/obstacle or after finding enemy
-    for (int i = 1; i <= moveDist; ++i) {
-        if ((index + (i * gameAreaDiameter)) <= 99) {
-            if (gameArea[index + (i * gameAreaDiameter)]->getContent() == nullptr) {
-                if(gameArea[index + (i * gameAreaDiameter)]->getIsTraversable()) {
-                    result.emplace_back(index + (i * gameAreaDiameter));
-                } else {
-                    break;
-                }
-            } else if (gameArea[index + (i * gameAreaDiameter)]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index + (i * gameAreaDiameter));
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    //Collect all available indeces to the right, break loop if edge/obstacle or after finding enemy
-    for (int j = 1; j <= moveDist; ++j) {
-        if (index + j <= rightEdge) {
-            if(gameArea[index + j]->getContent() == nullptr){
-                if( gameArea[index + j]->getIsTraversable()) {
-                    result.emplace_back(index + j);
-                } else {
-                    break;
-                }
-            } else if(gameArea[index + j]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index + j);
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    //Collect all available indeces to the left, break loop if edge/obstacle or after finding enemy
-    for (int j = 1; j <= moveDist; ++j) {
-        if (index - j >= leftEdge) {
-            if(gameArea[index - j]->getContent() == nullptr){
-                if( gameArea[index - j]->getIsTraversable()) {
-                    result.emplace_back(index - j);
-                } else {
-                    break;
-                }
-            } else if(gameArea[index - j]->getContent()->getColor() != currentPlayerColor) {
-                result.emplace_back(index - j);
-                break;
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-    //std::cout << "valid indeces for: " << index << std::endl;
-    //for (int k = 0; k < result.size(); ++k) {
-    //    std::cout << result[k] << " ";
-    //}
-    //std::cout << std::endl;
-
-    return result;
 }
 
 void Game::clearHighlights() {
@@ -817,6 +767,8 @@ void Game::handleVictory() {
         display->renderVictory(GameState::TIED);
     }
 }
+
+
 
 
 
