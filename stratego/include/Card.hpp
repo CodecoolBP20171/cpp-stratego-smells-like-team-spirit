@@ -8,6 +8,7 @@
 
 #include <map>
 #include <vector>
+#include <cmath>
 #include "CardType.h"
 #include "Color.h"
 
@@ -31,7 +32,48 @@ public:
         return color;
     }
 
+    int getCurrentX() const {
+        return currentX;
+    }
+
+    void setCurrentX(int currentX) {
+        Card::currentX = currentX;
+    }
+
+    int getCurrentY() const {
+        return currentY;
+    }
+
+    void setCurrentY(int currentY) {
+        Card::currentY = currentY;
+    }
+
+    int getNextXPos(int destinationX) {
+        double step;
+        if(currentX < destinationX) {
+            step = destinationX - currentX;
+            currentX += std::ceil(step / 30);
+        } else if(currentX > destinationX) {
+            step = currentX - destinationX;
+            currentX -= std::ceil(step / 30);
+        }
+        return currentX;
+    }
+
+    int getNextYPos(int destinationY) {
+        double step;
+        if(currentY < destinationY) {
+            step = destinationY - currentY;
+            currentY += std::ceil(step / 30);
+        } else if(currentY > destinationY) {
+            step = currentY - destinationY;
+            currentY -= std::ceil(step / 30);
+        }
+        return currentY;
+    }
 protected:
+    int currentX;
+    int currentY;
     bool isFaceDown = false;
     Color color;
 };

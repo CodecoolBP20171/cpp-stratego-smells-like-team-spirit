@@ -58,8 +58,10 @@ void Display::handleEvents() {
         }
         case SDL_MOUSEBUTTONDOWN: {
             SDL_GetMouseState(&mouse_x, &mouse_y);
+            std::cout << "got click" << std::endl;
             //std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
             processedEvent = processEvent(mouse_x, mouse_y);
+            std::cout << "processed event" << std::endl;
             eventQueue.push(processedEvent);
         }
         default: break;
@@ -102,27 +104,29 @@ void Display::renderPresent() {
     SDL_RenderPresent(renderer);
 }
 
-void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard) {
+void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY) {
 
     SDL_Rect destination;
     destination.h = 50;
     destination.w = 50;
-    destination.x = x;
-    destination.y = y;
+    destination.x = cardX;
+    destination.y = cardY;
 
     SDL_RenderCopy(renderer, textureAtlas, assets.getTexturePosition(faceUpCard, cardColor), &destination);
     if(highlighted) {
+        destination.x = x;
+        destination.y = y;
         SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
-void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
+void Display::renderField(int x, int y, bool highlighted, Color cardBackColor, int cardX, int cardY) {
 
     SDL_Rect destination;
     destination.h = 50;
     destination.w = 50;
-    destination.x = x;
-    destination.y = y;
+    destination.x = cardX;
+    destination.y = cardY;
 
     if(cardBackColor == Color::BLUE) {
         SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
@@ -131,6 +135,8 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor) {
     }
 
     if(highlighted) {
+        destination.x = x;
+        destination.y = y;
         SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 
@@ -255,8 +261,12 @@ bool Display::isIsRunning() const {
     return isRunning;
 }
 
-void Display::delay(int ms) {
-    SDL_Delay(ms);
+void Display::delay() {
+        SDL_Delay(0);
+}
+
+Uint32 Display::getTicks() {
+    return SDL_GetTicks();
 }
 
 

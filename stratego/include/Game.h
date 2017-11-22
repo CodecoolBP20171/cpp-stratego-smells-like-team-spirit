@@ -35,6 +35,7 @@ private:
     void populateCardArea();
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
+    void initCardPositions();
 
     void moveCard();
     bool isCardAreaEmpty();

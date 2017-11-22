@@ -17,6 +17,7 @@
 #include "../cards/CardGeneral.hpp"
 #include "../cards/CardMarshall.hpp"
 #include <algorithm>
+#include <SDL_timer.h>
 
 void Game::start() {
 
@@ -32,6 +33,7 @@ void Game::start() {
         if(gameState == GameState::BLUE_INIT_START ||
            gameState == GameState::RED_INIT_START) {
             populateCardArea();
+            initCardPositions();
         } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
                 gameState == GameState::RED_INIT_IN_PROGRESS) {
             handleInitInProgress();
@@ -52,7 +54,12 @@ void Game::start() {
             moveCard();
         }
         display->renderPresent();
-        display->delay(10);
+
+        Uint32 timePassed = display->getTicks();
+        Uint32 timestep = 16;
+        while(timePassed + timestep > display->getTicks()){
+            display->delay();
+        }
     }
     display->clean();
 }
@@ -226,13 +233,15 @@ void Game::renderGameArea() {
         if(gameArea[i]->getContent() == nullptr) {
             display->renderField(fieldX, fieldY, highlighted);
         } else {
+            int cardX = gameArea[i]->getContent()->getNextXPos(fieldX);
+            int cardY = gameArea[i]->getContent()->getNextYPos(fieldY);
             if(gameArea[i]->getContent()->getIsFaceDown()){
                 Color color = gameArea[i]->getContent()->getColor();
-                display->renderField(fieldX, fieldY, highlighted, color);
+                display->renderField(fieldX, fieldY, highlighted, color, cardX, cardY);
             } else {
                 Color color = gameArea[i]->getContent()->getColor();
                 CardType type = gameArea[i]->getContent()->getType();
-                display->renderField(fieldX, fieldY, highlighted, color, type);
+                display->renderField(fieldX, fieldY, highlighted, color, type, cardX, cardY);
             }
         }
     }
@@ -248,7 +257,9 @@ void Game::renderCardArea() {
         } else {
             Color color = cardArea[i]->getContent()->getColor();
             CardType type = cardArea[i]->getContent()->getType();
-            display->renderField(fieldX, fieldY, highlighted, color, type);
+            int cardX = cardArea[i]->getContent()->getNextXPos(fieldX);
+            int cardY = cardArea[i]->getContent()->getNextYPos(fieldY);
+            display->renderField(fieldX, fieldY, highlighted, color, type, cardX, cardY);
         }
     }
 }
@@ -345,6 +356,7 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handlePlayerClicks() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
+        std::cout << "event retrieved from queue" << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
 
@@ -550,7 +562,9 @@ void Game::renderDiscardPile() {
         if(discardPile[i]->getContent() != nullptr) {
             typeToRender = discardPile[i]->getContent()->getType();
             cardColor = discardPile[i]->getContent()->getColor();
-            display->renderField(fieldX, fieldY, false, cardColor, typeToRender);
+            int cardX = discardPile[i]->getContent()->getNextXPos(fieldX);
+            int cardY = discardPile[i]->getContent()->getNextYPos(fieldY);
+            display->renderField(fieldX, fieldY, false, cardColor, typeToRender, cardX, cardY);
         }
     }
 }
@@ -655,5 +669,17 @@ void Game::handleVictory() {
         display->renderVictory(GameState::RED_WINS);
     } else if(gameState == GameState::TIED) {
         display->renderVictory(GameState::TIED);
+    }
+}
+
+void Game::initCardPositions() {
+    int x, y;
+    for (int i = 0; i < cardArea.size() ; ++i) {
+        if(cardArea[i]->getContent() != nullptr) {
+            x = cardArea[i]->getX();
+            y = cardArea[i]->getY();
+            cardArea[i]->getContent()->setCurrentX(x);
+            cardArea[i]->getContent()->setCurrentY(y);
+        }
     }
 }
