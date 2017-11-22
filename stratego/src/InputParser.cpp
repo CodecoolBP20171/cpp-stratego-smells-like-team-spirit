@@ -3,6 +3,7 @@
 //
 
 #include "InputParser.h"
+#include <algorithm>
 
 void InputParser::evaluateInitPhaseClickEvent(ProcessedEvent event, std::vector<std::unique_ptr<Field>> &gameArea,
                                               std::vector<std::unique_ptr<Field>> &cardArea, ProcessedEvent &source,
@@ -10,11 +11,9 @@ void InputParser::evaluateInitPhaseClickEvent(ProcessedEvent event, std::vector<
 
     if(event.getClickedArea() == ClickedArea::GAME_AREA) {
         if(event.isInTerritory(currentPlayerColor)) {
-            //initPhaseGameAreaClick(event);
             initPhaseGameAreaClick(event, gameArea, cardArea, source, destination);
         }
     } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
-        //initPhaseSideAreaClick(event);
         initPhaseSideAreaClick(event, gameArea, cardArea, source, destination);
     }
 }
@@ -73,4 +72,37 @@ void InputParser::initPhaseSideAreaClick(ProcessedEvent event, std::vector<std::
     }
 }
 
+void InputParser::evaluatBattlePhaseClickEvent(ProcessedEvent event, std::vector<std::unique_ptr<Field>> &gameArea,
+                                               std::vector<int> &possibleMoves, ProcessedEvent &source,
+                                               ProcessedEvent &destination, ProcessedEvent &attacker,
+                                               ProcessedEvent &defender, Color currentPlayerColor,
+                                               GameState &gameState) {
+
+    if(gameArea[event.fieldIndex]->getContent() == nullptr) {
+        if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
+            destination = event;
+        }
+    } else {
+        if(source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
+            gameArea[source.fieldIndex]->unhighlight();
+            gameArea[event.fieldIndex]->highlight();
+            source = event;
+        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() != currentPlayerColor) {
+            if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
+                defender = event;
+                attacker = source;
+                if(currentPlayerColor == Color::BLUE) {
+                    gameState = GameState::WAITING_FOR_RED;
+                } else if(currentPlayerColor == Color::RED) {
+                    gameState = GameState::WAITING_FOR_BLUE;
+                }
+                source.empty();
+                destination.empty();
+            }
+        }
+    }
+}
 

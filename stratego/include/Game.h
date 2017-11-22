@@ -33,12 +33,15 @@ private:
 
     //Main Game Loop
     void populateCardArea();
+    void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
+    void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
+
     void moveCard();
     bool isCardAreaEmpty();
     void checkIfTied();
+    void handleInitInProgress();
     void handlePlayerMoveInProgress();
     void handleWaitForNextPlayer();
-    void handleInitInProgress();
     void handleVictory();
 
     //Rendering
@@ -56,13 +59,8 @@ private:
     void restartGame();
     Color getCurrentPlayerColor();
 
-    //Card setup phase input
-    void evaluateInitPhaseClickEvent(ProcessedEvent event);
-    void initPhaseGameAreaClick(ProcessedEvent event);
-    void initPhaseSideAreaClick(ProcessedEvent event);
 
     //Battle phase input
-    void evaluateBattlePhaseClickEvent(ProcessedEvent event);
     bool playerHasValidMoves(Color color);
     std::vector<int> gatherNearbyValidFieldIndeces(unsigned char moveDist, int index, Color color);
     void gatherViableMovesInDir(int index, unsigned char moveDist, Color color, std::vector<int> &result, Direction dir);
@@ -70,11 +68,9 @@ private:
     void triggerVictory(Color color);
     int getNextEmptyDiscardPileIndex();
 
-    void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
-    void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
 
     std::vector<int> possibleMoves;
-    InputParser input;
+    std::unique_ptr<InputParser> input;
     Button restart;
     Button exit;
     ProcessedEvent attacker;

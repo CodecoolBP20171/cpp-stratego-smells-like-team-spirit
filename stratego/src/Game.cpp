@@ -192,19 +192,17 @@ void Game::initGameArea() {
             gameArea.emplace_back(std::move(newField));
         }
     }
+    //Creating western lake
     gameArea[42]->setIsTraversable(false);
     gameArea[43]->setIsTraversable(false);
     gameArea[52]->setIsTraversable(false);
     gameArea[53]->setIsTraversable(false);
 
+    //Creating eastern lake
     gameArea[46]->setIsTraversable(false);
     gameArea[47]->setIsTraversable(false);
     gameArea[56]->setIsTraversable(false);
     gameArea[57]->setIsTraversable(false);
-    //Setting all fields to highlighted for testing
-    //for (int k = 0; k < gameArea.size(); k++) {
-    //        gameArea[k]->highlight();
-    //    }
 }
 
 
@@ -218,11 +216,6 @@ void Game::initCardArea() {
             cardArea.emplace_back(std::move(newField));
         }
     }
-
-    //Testing if they exist and if highlight works
-    //for (int k = 0; k < cardArea.size(); k+=3) {
-    //        cardArea[k]->highlight();
-    //}
 }
 
 void Game::renderGameArea() {
@@ -352,21 +345,16 @@ void Game::placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace) {
 void Game::handlePlayerClicks() {
     if(!display->isEventQueueEmpty()) {
         ProcessedEvent event = display->getEventFromQueue();
-        //std::cout << "field index: " << event.fieldIndex << std::endl;
-        //std::cout << "side index: " << event.sideAreaIndex << std::endl;
-        //std::cout << "restart: " << event.restartBtn << std::endl;
-        //std::cout << "exit:" << event.exitBtn << std::endl;
         if(event.exitBtn) {gameState = GameState::EXIT;}
         if(event.restartBtn) {restartGame();}
 
         if(gameState == GameState::RED_INIT_IN_PROGRESS ||
             gameState == GameState::BLUE_INIT_IN_PROGRESS){
-            input.evaluateInitPhaseClickEvent(event, gameArea, cardArea, source, destination, getCurrentPlayerColor());
-            //evaluateInitPhaseClickEvent(event);
+            input->evaluateInitPhaseClickEvent(event, gameArea, cardArea, source, destination, getCurrentPlayerColor());
         } else if(gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
                 gameState == GameState::RED_MOVE_IN_PROGRESS) {
             if(event.getClickedArea() == ClickedArea::GAME_AREA) {
-                evaluateBattlePhaseClickEvent(event);
+                input->evaluatBattlePhaseClickEvent(event, gameArea, possibleMoves, source, destination, attacker, defender, getCurrentPlayerColor(), gameState);
             }
         } else if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
@@ -379,71 +367,6 @@ void Game::handlePlayerClicks() {
     }
 }
 
-//void Game::evaluateInitPhaseClickEvent(ProcessedEvent event) {
-//
-//    Color currentPlayerColor;
-//    currentPlayerColor = getCurrentPlayerColor();
-//
-//    if(event.getClickedArea() == ClickedArea::GAME_AREA) {
-//        if(event.isInTerritory(currentPlayerColor)) {
-//            //initPhaseGameAreaClick(event);
-//            input.initPhaseGameAreaClick(event, gameArea, cardArea, source, destination);
-//        }
-//    } else if(event.getClickedArea() == ClickedArea::SIDE_AREA) {
-//        //initPhaseSideAreaClick(event);
-//        input.initPhaseSideAreaClick(event, gameArea, cardArea, source, destination);
-//    }
-//}
-//
-//void Game::initPhaseGameAreaClick(ProcessedEvent event) {
-//    if(!source.isEmpty()) {
-//        if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-//            destination = event;
-//        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-//                event.fieldIndex != source.fieldIndex) {
-//            gameArea[source.fieldIndex]->unhighlight();
-//            gameArea[event.fieldIndex]->highlight();
-//            source = event;
-//        } else if(source.getClickedArea() == ClickedArea::GAME_AREA &&
-//                event.fieldIndex == source.fieldIndex) {
-//            gameArea[source.fieldIndex]->unhighlight();
-//            source.empty();
-//        } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
-//            cardArea[source.sideAreaIndex]->unhighlight();
-//            gameArea[event.fieldIndex]->highlight();
-//            source = event;
-//        }
-//    } else {
-//        if(gameArea[event.fieldIndex]->getContent() != nullptr) {
-//            source = event;
-//            gameArea[source.fieldIndex]->highlight();
-//        }
-//    }
-//}
-
-//void Game::initPhaseSideAreaClick(ProcessedEvent event) {
-//    if(cardArea[event.sideAreaIndex]->getContent() != nullptr) {
-//        if(source.isEmpty()) {
-//            source = event;
-//            cardArea[source.sideAreaIndex]->highlight();
-//        } else {
-//            if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-//                    source.sideAreaIndex == event.sideAreaIndex) {
-//                cardArea[source.sideAreaIndex]->unhighlight();
-//                source.empty();
-//            } else if(source.getClickedArea() == ClickedArea::SIDE_AREA &&
-//                    source.sideAreaIndex != event.sideAreaIndex){
-//                cardArea[source.sideAreaIndex]->unhighlight();
-//                cardArea[event.sideAreaIndex]->highlight();
-//                source = event;
-//            } else if(source.getClickedArea() == ClickedArea::GAME_AREA) {
-//                gameArea[source.fieldIndex]->unhighlight();
-//                cardArea[event.sideAreaIndex]->highlight();
-//                source = event;
-//            }
-//        }
-//    }
-//}
 
 void Game::restartGame() {
     for (int i = 0; i < gameArea.size(); ++i) {
@@ -483,38 +406,6 @@ Color Game::getCurrentPlayerColor() {
     return Color::RED;
 }
 
-void Game::evaluateBattlePhaseClickEvent(ProcessedEvent event) {
-    Color currentPlayerColor = getCurrentPlayerColor();
-    unsigned char moveDist;
-
-    if(gameArea[event.fieldIndex]->getContent() == nullptr) {
-        if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
-            destination = event;
-            gameArea[source.fieldIndex]->unhighlight();
-        }
-    } else {
-        if(source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() == currentPlayerColor) {
-            gameArea[source.fieldIndex]->unhighlight();
-            gameArea[event.fieldIndex]->highlight();
-            source = event;
-        } else if(!source.isEmpty() && gameArea[event.fieldIndex]->getContent()->getColor() != currentPlayerColor) {
-            if(std::find(possibleMoves.begin(), possibleMoves.end(), event.fieldIndex) != possibleMoves.end()) {
-                defender = event;
-                attacker = source;
-                if(currentPlayerColor == Color::BLUE) {
-                    gameState = GameState::WAITING_FOR_RED;
-                } else if(currentPlayerColor == Color::RED) {
-                    gameState = GameState::WAITING_FOR_BLUE;
-                }
-                source.empty();
-                destination.empty();
-            }
-        }
-    }
-}
 
 bool Game::playerHasValidMoves(Color currentPlayerColor) {
     unsigned char moveDist;
@@ -754,7 +645,6 @@ void Game::handleInitInProgress() {
         changeFacingOfCards(Color::RED, true);
         changeFacingOfCards(Color::BLUE, false);
         gameState = GameState::WAITING_FOR_BLUE;
-
     }
 }
 
@@ -767,8 +657,3 @@ void Game::handleVictory() {
         display->renderVictory(GameState::TIED);
     }
 }
-
-
-
-
-
