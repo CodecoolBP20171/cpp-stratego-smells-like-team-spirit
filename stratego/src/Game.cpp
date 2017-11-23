@@ -1,4 +1,4 @@
-//
+
 // Created by apha on 2017.11.07..
 //
 
@@ -24,37 +24,56 @@ void Game::start() {
     display->init("Stratego", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 780, 520, false);
 
     while(gameState != GameState::EXIT) {
+        Uint32 timePassed = display->getTicks();
+
         display->handleEvents();
-        display->render();
+        display->renderBackground();
         renderButtons();
         renderGameArea();
 
-        if(gameState == GameState::BLUE_INIT_START ||
-           gameState == GameState::RED_INIT_START) {
-            populateCardArea();
-        } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
-                gameState == GameState::RED_INIT_IN_PROGRESS) {
-            handleInitInProgress();
-        } else if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
-           gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            handlePlayerMoveInProgress();
-        } else if(gameState == GameState::WAITING_FOR_BLUE ||
-                gameState == GameState::WAITING_FOR_RED) {
-            handleWaitForNextPlayer();
-        } else if(gameState == GameState::RED_WINS ||
-                gameState == GameState::BLUE_WINS ||
-                gameState == GameState::TIED) {
-            handleVictory();
-        }
+        delegateAccordingToGameState();
 
         handlePlayerClicks();
         if(!source.isEmpty() && !destination.isEmpty()){
             moveCard();
         }
+
         display->renderPresent();
-        display->delay(10);
+
+        Uint32 timestep = 16;
+        while(timePassed + timestep > display->getTicks()){
+            display->delay();
+        }
     }
     display->clean();
+}
+
+void Game::delegateAccordingToGameState() {
+    if(gameState == GameState::BLUE_INIT_START ||
+       gameState == GameState::RED_INIT_START) {
+        populateCardArea();
+        initCardPositions();
+    } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+              gameState == GameState::RED_INIT_IN_PROGRESS) {
+        handleInitInProgress();
+    } else if(gameState == GameState::BLUE_MOVE_START ||
+              gameState == GameState::RED_MOVE_START) {
+        handlePlayerMoveStart();
+    } else if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
+              gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+        handlePlayerMoveInProgress();
+    } else if(gameState == GameState::WAIT_FOR_BLUE_START ||
+              gameState == GameState::WAIT_FOR_RED_START) {
+        handleWaitPhaseStart();
+    } else if(gameState == GameState::WAITING_FOR_BLUE ||
+              gameState == GameState::WAITING_FOR_RED) {
+        handleWaitForNextPlayer();
+    } else if(gameState == GameState::RED_WINS ||
+              gameState == GameState::BLUE_WINS ||
+              gameState == GameState::TIED) {
+        handleVictory();
+    }
+
 }
 
 void Game::populateCardArea() {
@@ -77,7 +96,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                amountToSpawn = 2;
+                //amountToSpawn = 2;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -88,7 +107,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -158,13 +177,13 @@ void Game::moveCard() {
     }
 
     if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-        gameState = GameState::WAITING_FOR_RED;
+        gameState = GameState::WAIT_FOR_RED_START;
         gameArea[source.fieldIndex]->highlight();
         gameArea[destination.fieldIndex]->highlight();
     }
 
     if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
-        gameState = GameState::WAITING_FOR_BLUE;
+        gameState = GameState::WAIT_FOR_BLUE_START;
         gameArea[source.fieldIndex]->highlight();
         gameArea[destination.fieldIndex]->highlight();
     }
@@ -226,13 +245,16 @@ void Game::renderGameArea() {
         if(gameArea[i]->getContent() == nullptr) {
             display->renderField(fieldX, fieldY, highlighted);
         } else {
+            int cardX = gameArea[i]->getContent()->getNextXPos(fieldX);
+            int cardY = gameArea[i]->getContent()->getNextYPos(fieldY);
+            int cardW = gameArea[i]->getContent()->getNextFlipAnimFrameWidth();
             if(gameArea[i]->getContent()->getIsFaceDown()){
                 Color color = gameArea[i]->getContent()->getColor();
-                display->renderField(fieldX, fieldY, highlighted, color);
+                display->renderField(fieldX, fieldY, highlighted, color, cardX, cardY, cardW);
             } else {
                 Color color = gameArea[i]->getContent()->getColor();
                 CardType type = gameArea[i]->getContent()->getType();
-                display->renderField(fieldX, fieldY, highlighted, color, type);
+                display->renderField(fieldX, fieldY, highlighted, color, type, cardX, cardY, cardW);
             }
         }
     }
@@ -248,7 +270,10 @@ void Game::renderCardArea() {
         } else {
             Color color = cardArea[i]->getContent()->getColor();
             CardType type = cardArea[i]->getContent()->getType();
-            display->renderField(fieldX, fieldY, highlighted, color, type);
+            int cardX = cardArea[i]->getContent()->getNextXPos(fieldX);
+            int cardY = cardArea[i]->getContent()->getNextYPos(fieldY);
+            int cardW = cardArea[i]->getContent()->getNextFlipAnimFrameWidth();
+            display->renderField(fieldX, fieldY, highlighted, color, type, cardX, cardY, cardW);
         }
     }
 }
@@ -358,10 +383,10 @@ void Game::handlePlayerClicks() {
             }
         } else if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
-            gameState = GameState::BLUE_MOVE_IN_PROGRESS;
+            gameState = GameState::BLUE_MOVE_START;
         } else if(gameState == GameState::WAITING_FOR_RED && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
-            gameState = GameState::RED_MOVE_IN_PROGRESS;
+            gameState = GameState::RED_MOVE_START;
         }
 
     }
@@ -376,6 +401,13 @@ void Game::restartGame() {
         cardArea[j]->removeCard();
     }
     gameState = GameState::BLUE_INIT_START;
+    clearHighlights();
+    if(source.getClickedArea() == ClickedArea::GAME_AREA) {
+        gameArea[source.fieldIndex]->unhighlight();
+    } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
+        cardArea[source.sideAreaIndex]->unhighlight();
+    }
+    source.empty();
 }
 
 bool Game::isCardAreaEmpty() {
@@ -388,17 +420,25 @@ bool Game::isCardAreaEmpty() {
 }
 
 void Game::changeFacingOfCards(Color color, bool faceDown){
+    int delay = 0;
     for (int i = 0; i < gameArea.size(); ++i) {
         if(gameArea[i]->getContent() != nullptr) {
+            delay += 3;
             if(gameArea[i]->getContent()->getColor() == color) {
-                gameArea[i]->getContent()->setIsFaceDown(faceDown);
+                if(faceDown) {
+                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_DOWN, delay, 25);
+                } else if(!faceDown){
+                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, delay, 25);
+                }
             }
         }
     }
 }
 
 Color Game::getCurrentPlayerColor() {
-    if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+    if(gameState == GameState::BLUE_INIT_START ||
+       gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+       gameState == GameState::BLUE_MOVE_START ||
        gameState == GameState::BLUE_MOVE_IN_PROGRESS ||
        gameState == GameState::WAITING_FOR_BLUE ) {
         return Color::BLUE;
@@ -417,8 +457,6 @@ bool Game::playerHasValidMoves(Color currentPlayerColor) {
                 validMoveIndeces = gatherNearbyValidFieldIndeces(moveDist, i, currentPlayerColor);
                 if(validMoveIndeces.size() > 0){
                     return true;
-                } else {
-                    //std::cout << "valid moves not empty!";
                 }
             }
         }
@@ -484,8 +522,8 @@ void Game::clearHighlights() {
 
 void Game::revealCombatants() {
     if(attacker.fieldIndex != -1 && defender.fieldIndex != -1) {
-        gameArea[attacker.fieldIndex]->getContent()->setIsFaceDown(false);
-        gameArea[defender.fieldIndex]->getContent()->setIsFaceDown(false);
+        gameArea[attacker.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
+        gameArea[defender.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
     }
 }
 
@@ -550,7 +588,10 @@ void Game::renderDiscardPile() {
         if(discardPile[i]->getContent() != nullptr) {
             typeToRender = discardPile[i]->getContent()->getType();
             cardColor = discardPile[i]->getContent()->getColor();
-            display->renderField(fieldX, fieldY, false, cardColor, typeToRender);
+            int cardX = discardPile[i]->getContent()->getNextXPos(fieldX);
+            int cardY = discardPile[i]->getContent()->getNextYPos(fieldY);
+            int cardW = discardPile[i]->getContent()->getNextFlipAnimFrameWidth();
+            display->renderField(fieldX, fieldY, false, cardColor, typeToRender, cardX, cardY, cardW);
         }
     }
 }
@@ -583,10 +624,8 @@ void Game::checkIfTied() {
 
 void Game::handlePlayerMoveInProgress() {
 
-    renderDiscardPile();
     checkIfTied();
     Color currentPlayerColor = getCurrentPlayerColor();
-    if(!possibleMoves.empty()) renderAvailableMoves();
     if(!source.isEmpty()) {
         unsigned char moveDist;
         moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
@@ -594,34 +633,28 @@ void Game::handlePlayerMoveInProgress() {
     }
 
     if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_RED;
-        changeFacingOfCards(Color::BLUE, false);
+        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAIT_FOR_RED_START;
         resolveBattle();
 
     } else if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
-        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAITING_FOR_BLUE;
-        changeFacingOfCards(Color::RED, false);
+        if(!playerHasValidMoves(getCurrentPlayerColor())) gameState = GameState::WAIT_FOR_BLUE_START;
         resolveBattle();
     }
+    renderGameArea();
+    renderDiscardPile();
+    if(!possibleMoves.empty()) renderAvailableMoves();
 }
 
 void Game::handleWaitForNextPlayer() {
     checkIfTied();
+    renderDiscardPile();
     if(gameState == GameState::WAITING_FOR_BLUE) {
-        changeFacingOfCards(Color::RED, true);
-        changeFacingOfCards(Color::BLUE, true);
-        renderDiscardPile();
-        revealCombatants();
         display->renderWaitMsg(Color::BLUE);
 
     } else if(gameState == GameState::WAITING_FOR_RED) {
-        changeFacingOfCards(Color::RED, true);
-        changeFacingOfCards(Color::BLUE, true);
-        renderDiscardPile();
-        revealCombatants();
         display->renderWaitMsg(Color::RED);
     }
-    possibleMoves.clear();
+    renderGameArea();
 }
 
 void Game::handleInitInProgress() {
@@ -643,8 +676,8 @@ void Game::handleInitInProgress() {
     } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
               isCardAreaEmpty()) {
         changeFacingOfCards(Color::RED, true);
-        changeFacingOfCards(Color::BLUE, false);
-        gameState = GameState::WAITING_FOR_BLUE;
+        changeFacingOfCards(Color::BLUE, true);
+        gameState = GameState::WAIT_FOR_BLUE_START;
     }
 }
 
@@ -657,3 +690,42 @@ void Game::handleVictory() {
         display->renderVictory(GameState::TIED);
     }
 }
+
+void Game::initCardPositions() {
+    int x, y;
+    for (int i = 0; i < cardArea.size() ; ++i) {
+        if(cardArea[i]->getContent() != nullptr) {
+            x = cardArea[i]->getX();
+            y = cardArea[i]->getY();
+            cardArea[i]->getContent()->setCurrentX(x);
+            cardArea[i]->getContent()->setCurrentY(y);
+        }
+    }
+}
+
+void Game::handleWaitPhaseStart() {
+    if(gameState == GameState::WAIT_FOR_BLUE_START) {
+        changeFacingOfCards(Color::RED, true);
+        revealCombatants();
+
+    } else if(gameState == GameState::WAIT_FOR_RED_START) {
+        changeFacingOfCards(Color::BLUE, true);
+        revealCombatants();
+    }
+    possibleMoves.clear();
+    if(gameState == GameState::WAIT_FOR_BLUE_START) gameState = GameState::WAITING_FOR_BLUE;
+    if(gameState == GameState::WAIT_FOR_RED_START) gameState = GameState::WAITING_FOR_RED;
+}
+
+void Game::handlePlayerMoveStart() {
+    if(gameState == GameState::BLUE_MOVE_START) {
+        changeFacingOfCards(Color::BLUE, false);
+        gameState = GameState::BLUE_MOVE_IN_PROGRESS;
+
+    } else if(gameState == GameState::RED_MOVE_START) {
+        changeFacingOfCards(Color::RED, false);
+        gameState = GameState::RED_MOVE_IN_PROGRESS;
+    }
+}
+
+

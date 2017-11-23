@@ -68,3 +68,5 @@ fabric.properties
 *.xml
 
 *.iml
+
+stratego/cmake-build-release/

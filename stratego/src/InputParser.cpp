@@ -95,9 +95,9 @@ void InputParser::evaluatBattlePhaseClickEvent(ProcessedEvent event, std::vector
                 defender = event;
                 attacker = source;
                 if(currentPlayerColor == Color::BLUE) {
-                    gameState = GameState::WAITING_FOR_RED;
+                    gameState = GameState::WAIT_FOR_RED_START;
                 } else if(currentPlayerColor == Color::RED) {
-                    gameState = GameState::WAITING_FOR_BLUE;
+                    gameState = GameState::WAIT_FOR_BLUE_START;
                 }
                 source.empty();
                 destination.empty();

@@ -32,15 +32,19 @@ private:
     void initCardArea();
 
     //Main Game Loop
+    void delegateAccordingToGameState();
     void populateCardArea();
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);
+    void initCardPositions();
 
     void moveCard();
     bool isCardAreaEmpty();
     void checkIfTied();
     void handleInitInProgress();
+    void handlePlayerMoveStart();
     void handlePlayerMoveInProgress();
+    void handleWaitPhaseStart();
     void handleWaitForNextPlayer();
     void handleVictory();
 
