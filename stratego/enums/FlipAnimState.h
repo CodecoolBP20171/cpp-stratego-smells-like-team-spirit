@@ -1,0 +1,11 @@
+//
+// Created by apha on 2017.11.23..
+//
+
+#ifndef STRATEGO_FLIPANIMSTATE_H
+#define STRATEGO_FLIPANIMSTATE_H
+
+enum class FlipAnimState {
+    NOT_ANIMATED, TURNING_FACE_DOWN, TURNING_FACE_UP
+};
+#endif //STRATEGO_FLIPANIMSTATE_H
