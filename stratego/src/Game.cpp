@@ -28,6 +28,7 @@ void Game::start() {
         display->handleEvents();
         display->render();
         renderButtons();
+        renderGameArea();
 
         if(gameState == GameState::BLUE_INIT_START ||
            gameState == GameState::RED_INIT_START) {
@@ -53,7 +54,6 @@ void Game::start() {
                 gameState == GameState::TIED) {
             handleVictory();
         }
-        renderGameArea();
 
         handlePlayerClicks();
         if(!source.isEmpty() && !destination.isEmpty()){
@@ -89,7 +89,7 @@ void Game::populateCardArea() {
             }
             case CardType::BOMB: {
                 amountToSpawn = CardBomb::getNR_TO_SPAWN();
-                amountToSpawn = 2;
+                //amountToSpawn = 2;
                 spawnNrOfTypesOfCards(CardType::BOMB, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -100,7 +100,7 @@ void Game::populateCardArea() {
             }
             case CardType::SCOUT: {
                 amountToSpawn = CardScout::getNR_TO_SPAWN();
-                amountToSpawn = 1;
+                //amountToSpawn = 1;
                 spawnNrOfTypesOfCards(CardType::SCOUT, amountToSpawn, colorToSpawnWith);
                 break;
             }
@@ -150,10 +150,8 @@ void Game::populateCardArea() {
 
     if(gameState == GameState::BLUE_INIT_START) {
         gameState = GameState::BLUE_INIT_IN_PROGRESS;
-        std::cout << "gamestate blue init in progress\n";
     } else {
         gameState = GameState::RED_INIT_IN_PROGRESS;
-        std::cout << "gamestate red init in progress\n";
     }
 }
 
@@ -173,14 +171,12 @@ void Game::moveCard() {
 
     if(gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
         gameState = GameState::WAIT_FOR_RED_START;
-        std::cout << "moving card - gamestate changed to wait for red start\n";
         gameArea[source.fieldIndex]->highlight();
         gameArea[destination.fieldIndex]->highlight();
     }
 
     if(gameState == GameState::RED_MOVE_IN_PROGRESS) {
         gameState = GameState::WAIT_FOR_BLUE_START;
-        std::cout << "moving card - gamestate changed to wait for blue start\n";
         gameArea[source.fieldIndex]->highlight();
         gameArea[destination.fieldIndex]->highlight();
     }
@@ -192,7 +188,6 @@ void Game::moveCard() {
 
 Game::Game() {
     gameState = GameState::BLUE_INIT_START;
-    std::cout << "game constructor - gamestate changed to blue init start\n";
     initGameArea();
     initCardArea();
     initButtons();
@@ -382,11 +377,9 @@ void Game::handlePlayerClicks() {
         } else if(gameState == GameState::WAITING_FOR_BLUE && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
             gameState = GameState::BLUE_MOVE_START;
-            std::cout << "handle player clicks - gamestate changed to blue move start\n";
         } else if(gameState == GameState::WAITING_FOR_RED && event.getClickedArea() == ClickedArea::GAME_AREA) {
             clearHighlights();
             gameState = GameState::RED_MOVE_START;
-            std::cout << "handle player clicks - gamestate changed to red move start\n";
         }
 
     }
@@ -401,7 +394,13 @@ void Game::restartGame() {
         cardArea[j]->removeCard();
     }
     gameState = GameState::BLUE_INIT_START;
-    std::cout << "restart - gamestate blue init start\n";
+    clearHighlights();
+    if(source.getClickedArea() == ClickedArea::GAME_AREA) {
+        gameArea[source.fieldIndex]->unhighlight();
+    } else if(source.getClickedArea() == ClickedArea::SIDE_AREA) {
+        cardArea[source.sideAreaIndex]->unhighlight();
+    }
+    source.empty();
 }
 
 bool Game::isCardAreaEmpty() {
@@ -417,7 +416,7 @@ void Game::changeFacingOfCards(Color color, bool faceDown){
     int delay = 0;
     for (int i = 0; i < gameArea.size(); ++i) {
         if(gameArea[i]->getContent() != nullptr) {
-            delay += 5;
+            delay += 3;
             if(gameArea[i]->getContent()->getColor() == color) {
                 if(faceDown) {
                     gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_DOWN, delay, 25);
@@ -451,8 +450,6 @@ bool Game::playerHasValidMoves(Color currentPlayerColor) {
                 validMoveIndeces = gatherNearbyValidFieldIndeces(moveDist, i, currentPlayerColor);
                 if(validMoveIndeces.size() > 0){
                     return true;
-                } else {
-                    //std::cout << "valid moves not empty!";
                 }
             }
         }
@@ -518,11 +515,8 @@ void Game::clearHighlights() {
 
 void Game::revealCombatants() {
     if(attacker.fieldIndex != -1 && defender.fieldIndex != -1) {
-        //gameArea[attacker.fieldIndex]->getContent()->setIsFaceDown(false);
         gameArea[attacker.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
         gameArea[defender.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
-        //gameArea[defender.fieldIndex]->getContent()->setIsFaceDown(false);
-        std::cout << "REVEAL COMBATANTS\n";
     }
 }
 
@@ -625,7 +619,6 @@ void Game::handlePlayerMoveInProgress() {
 
     checkIfTied();
     Color currentPlayerColor = getCurrentPlayerColor();
-    if(!possibleMoves.empty()) renderAvailableMoves();
     if(!source.isEmpty()) {
         unsigned char moveDist;
         moveDist = gameArea[source.fieldIndex]->getContent()->getMoveDistance();
@@ -642,6 +635,7 @@ void Game::handlePlayerMoveInProgress() {
     }
     renderGameArea();
     renderDiscardPile();
+    if(!possibleMoves.empty()) renderAvailableMoves();
 }
 
 void Game::handleWaitForNextPlayer() {
@@ -670,15 +664,13 @@ void Game::handleInitInProgress() {
     if(gameState == GameState::BLUE_INIT_IN_PROGRESS &&
               isCardAreaEmpty()) {
         changeFacingOfCards(Color::BLUE, true);
-        std::cout << "handle init in prog - gamestate to red init start\n";
         gameState = GameState::RED_INIT_START;
 
     } else if(gameState == GameState::RED_INIT_IN_PROGRESS &&
               isCardAreaEmpty()) {
         changeFacingOfCards(Color::RED, true);
-        changeFacingOfCards(Color::BLUE, false);
+        changeFacingOfCards(Color::BLUE, true);
         gameState = GameState::WAIT_FOR_BLUE_START;
-        std::cout << "handle init in prog - gamestate to waiting for blue start\n";
     }
 }
 
@@ -705,14 +697,11 @@ void Game::initCardPositions() {
 }
 
 void Game::handleWaitPhaseStart() {
-    std::cout << "INSIDE HANDLEWAITPHASESTART\n";
     if(gameState == GameState::WAIT_FOR_BLUE_START) {
         changeFacingOfCards(Color::RED, true);
-        changeFacingOfCards(Color::BLUE, true);
         revealCombatants();
 
     } else if(gameState == GameState::WAIT_FOR_RED_START) {
-        changeFacingOfCards(Color::RED, true);
         changeFacingOfCards(Color::BLUE, true);
         revealCombatants();
     }
@@ -724,13 +713,11 @@ void Game::handleWaitPhaseStart() {
 void Game::handlePlayerMoveStart() {
     if(gameState == GameState::BLUE_MOVE_START) {
         changeFacingOfCards(Color::BLUE, false);
-        std::cout << "handle player move start - gamestate: blue move in progress\n";
         gameState = GameState::BLUE_MOVE_IN_PROGRESS;
 
     } else if(gameState == GameState::RED_MOVE_START) {
         changeFacingOfCards(Color::RED, false);
         gameState = GameState::RED_MOVE_IN_PROGRESS;
-        std::cout << "handle player move start - gamestate: red move in progress\n";
     }
 }
 
