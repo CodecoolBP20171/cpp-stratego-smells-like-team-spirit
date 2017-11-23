@@ -77,8 +77,8 @@ void Game::delegateAccordingToGameState() {
 }
 
 void Game::populateCardArea() {
-    //for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
-    for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
+    for (int i = 0; i <= static_cast<int>(CardType::MARSHALL) ; ++i) {
+    //for (int i = 0; i <= static_cast<int>(CardType::SCOUT) ; ++i) {
         auto currentTypeToSpawn = static_cast<CardType >(i);
         int amountToSpawn;
         Color colorToSpawnWith;
