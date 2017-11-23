@@ -86,17 +86,20 @@ public:
     int getNextFlipAnimFrameWidth() {
         if (delayFrames > 0) {
             delayFrames--;
+            return 50;
         } else {
-            if (animFrames > -50 && currentFlipState != FlipAnimState::NOT_ANIMATED) animFrames--;
+            if (animFrames > -25 && currentFlipState != FlipAnimState::NOT_ANIMATED) {
+                animFrames--;
+            }
             if (animFrames == 0) {
                 if (currentFlipState == FlipAnimState::TURNING_FACE_DOWN) isFaceDown = true;
                 if (currentFlipState == FlipAnimState::TURNING_FACE_UP) isFaceDown = false;
             }
-            if(animFrames == -50) {
+            if(animFrames == -25) {
                 currentFlipState = FlipAnimState::NOT_ANIMATED;
-                animFrames = 50;
+                animFrames = 25;
             }
-            return abs(animFrames);
+            return abs(animFrames)*2;
         }
     }
 
@@ -107,7 +110,6 @@ protected:
     FlipAnimState currentFlipState = FlipAnimState::NOT_ANIMATED;
     int delayFrames = 0;
     int animFrames = 50;
-    int animWidth;
 
     bool isFaceDown = false;
     Color color;

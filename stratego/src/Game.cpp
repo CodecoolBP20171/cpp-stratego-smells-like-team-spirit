@@ -420,9 +420,9 @@ void Game::changeFacingOfCards(Color color, bool faceDown){
             delay += 5;
             if(gameArea[i]->getContent()->getColor() == color) {
                 if(faceDown) {
-                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_DOWN, delay, 50);
+                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_DOWN, delay, 25);
                 } else if(!faceDown){
-                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, delay, 50);
+                    gameArea[i]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, delay, 25);
                 }
             }
         }
@@ -519,8 +519,8 @@ void Game::clearHighlights() {
 void Game::revealCombatants() {
     if(attacker.fieldIndex != -1 && defender.fieldIndex != -1) {
         //gameArea[attacker.fieldIndex]->getContent()->setIsFaceDown(false);
-        gameArea[attacker.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 50);
-        gameArea[defender.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 50);
+        gameArea[attacker.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
+        gameArea[defender.fieldIndex]->getContent()->setCurrentFlipAnim(FlipAnimState::TURNING_FACE_UP, 1, 25);
         //gameArea[defender.fieldIndex]->getContent()->setIsFaceDown(false);
         std::cout << "REVEAL COMBATANTS\n";
     }
