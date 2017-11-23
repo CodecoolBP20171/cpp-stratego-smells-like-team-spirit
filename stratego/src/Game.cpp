@@ -25,40 +25,19 @@ void Game::start() {
 
     while(gameState != GameState::EXIT) {
         Uint32 timePassed = display->getTicks();
+
         display->handleEvents();
-        display->render();
+        display->renderBackground();
         renderButtons();
         renderGameArea();
 
-        if(gameState == GameState::BLUE_INIT_START ||
-           gameState == GameState::RED_INIT_START) {
-            populateCardArea();
-            initCardPositions();
-        } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
-                gameState == GameState::RED_INIT_IN_PROGRESS) {
-            handleInitInProgress();
-        } else if(gameState == GameState::BLUE_MOVE_START ||
-                gameState == GameState::RED_MOVE_START) {
-            handlePlayerMoveStart();
-        } else if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
-                gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
-            handlePlayerMoveInProgress();
-        } else if(gameState == GameState::WAIT_FOR_BLUE_START ||
-                gameState == GameState::WAIT_FOR_RED_START) {
-            handleWaitPhaseStart();
-        } else if(gameState == GameState::WAITING_FOR_BLUE ||
-                gameState == GameState::WAITING_FOR_RED) {
-            handleWaitForNextPlayer();
-        } else if(gameState == GameState::RED_WINS ||
-                gameState == GameState::BLUE_WINS ||
-                gameState == GameState::TIED) {
-            handleVictory();
-        }
+        delegateAccordingToGameState();
 
         handlePlayerClicks();
         if(!source.isEmpty() && !destination.isEmpty()){
             moveCard();
         }
+
         display->renderPresent();
 
         Uint32 timestep = 16;
@@ -67,6 +46,34 @@ void Game::start() {
         }
     }
     display->clean();
+}
+
+void Game::delegateAccordingToGameState() {
+    if(gameState == GameState::BLUE_INIT_START ||
+       gameState == GameState::RED_INIT_START) {
+        populateCardArea();
+        initCardPositions();
+    } else if(gameState == GameState::BLUE_INIT_IN_PROGRESS ||
+              gameState == GameState::RED_INIT_IN_PROGRESS) {
+        handleInitInProgress();
+    } else if(gameState == GameState::BLUE_MOVE_START ||
+              gameState == GameState::RED_MOVE_START) {
+        handlePlayerMoveStart();
+    } else if(gameState == GameState::RED_MOVE_IN_PROGRESS ||
+              gameState == GameState::BLUE_MOVE_IN_PROGRESS) {
+        handlePlayerMoveInProgress();
+    } else if(gameState == GameState::WAIT_FOR_BLUE_START ||
+              gameState == GameState::WAIT_FOR_RED_START) {
+        handleWaitPhaseStart();
+    } else if(gameState == GameState::WAITING_FOR_BLUE ||
+              gameState == GameState::WAITING_FOR_RED) {
+        handleWaitForNextPlayer();
+    } else if(gameState == GameState::RED_WINS ||
+              gameState == GameState::BLUE_WINS ||
+              gameState == GameState::TIED) {
+        handleVictory();
+    }
+
 }
 
 void Game::populateCardArea() {
@@ -720,4 +727,5 @@ void Game::handlePlayerMoveStart() {
         gameState = GameState::RED_MOVE_IN_PROGRESS;
     }
 }
+
 

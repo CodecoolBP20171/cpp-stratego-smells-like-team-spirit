@@ -32,6 +32,7 @@ private:
     void initCardArea();
 
     //Main Game Loop
+    void delegateAccordingToGameState();
     void populateCardArea();
     void spawnNrOfTypesOfCards(CardType typeToSpawn, int amountToSpawn, Color color);
     void placeToNextEmptyFieldInSideArea(std::unique_ptr<Card> cardToPlace);

@@ -7,6 +7,7 @@
 #include <SDL_image.h>
 #include <Game.h>
 
+
 void Display::init(const char *title, int xpos, int ypos, int width, int height, bool fullscreen)
 {
     int flags = 0;
@@ -19,29 +20,45 @@ void Display::init(const char *title, int xpos, int ypos, int width, int height,
     if(SDL_Init(SDL_INIT_EVERYTHING) == 0)
     {
         std::cout << "Subsystems initialised..." << std::endl;
-        window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
+        window = create_window(title, xpos, ypos, width, height, flags);
         if(window)
         {
             std::cout << "Window created..." << std::endl;
         }
 
-        renderer = SDL_CreateRenderer(window, -1, 0);
+        renderer = create_renderer(window.get(), -1, 0);
         if(renderer)
         {
             std::cout << "Renderer created..." << std::endl;
         }
 
         isRunning = true;
-        SDL_Surface* tmpSurface = IMG_Load("assets/texture_atlas.png");
-        if(!tmpSurface) {
+        textureAtlas = load_texture("assets/texture_atlas.png");
+        if(!textureAtlas) {
             std::cout << "couldn't load img " << SDL_GetError() << std::endl;
         }
-        textureAtlas = SDL_CreateTextureFromSurface(renderer, tmpSurface);
-        SDL_FreeSurface(tmpSurface);
 
     } else {
         isRunning = false;
     }
+}
+
+std::unique_ptr<SDL_Window, sdl_deleter> Display::create_window(char const *title, int x, int y, int w, int h, Uint32 flags)
+{
+    return std::unique_ptr<SDL_Window, sdl_deleter>(
+            SDL_CreateWindow(title, x, y, w, h, flags),
+            sdl_deleter());
+}
+std::unique_ptr<SDL_Renderer, sdl_deleter> Display::create_renderer(SDL_Window *window, int index, Uint32 flags) {
+    return std::unique_ptr<SDL_Renderer, sdl_deleter>(
+            SDL_CreateRenderer(window, index, flags),
+            sdl_deleter());
+}
+
+std::unique_ptr<SDL_Texture, sdl_deleter> Display::load_texture(const std::string &filename) {
+    return std::unique_ptr<SDL_Texture, sdl_deleter>(
+            IMG_LoadTexture_RW(renderer.get(), SDL_RWFromFile(filename.c_str(), "rb"), 1),
+            sdl_deleter());
 }
 
 void Display::handleEvents() {
@@ -66,7 +83,7 @@ void Display::handleEvents() {
     }
 }
 
-void Display::render()
+void Display::renderBackground()
 {
     SDL_Rect source, destination;
     source.h = 520;
@@ -74,15 +91,14 @@ void Display::render()
     source.x = 0;
     source.y = 0;
 
-    SDL_RenderClear(renderer);
-    //This is where we could add stuff to render
-    SDL_RenderCopy(renderer, textureAtlas, &source, NULL);
+    SDL_RenderClear(renderer.get());
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), &source, NULL);
 }
 
 void Display::clean() {
-    SDL_DestroyTexture(textureAtlas);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(textureAtlas.get());
+    SDL_DestroyRenderer(renderer.get());
+    SDL_DestroyWindow(window.get());
     IMG_Quit();
     SDL_Quit();
     std::cout << "Cleaned up after Display class..." << std::endl;
@@ -96,28 +112,18 @@ void Display::renderField(int x, int y, bool highlighted) {
         destination.w = 50;
         destination.x = x;
         destination.y = y;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
 void Display::renderPresent() {
-    SDL_RenderPresent(renderer);
-}
-
-void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY, int cardW) {
-    if(cardW > 50) cardW = 50;
-    SDL_Rect destination;
-    destination.h = 50;
-    destination.w = cardW;
-    destination.x = cardX + (25 - cardW/2);
-    destination.y = cardY;
-
-    SDL_RenderCopy(renderer, textureAtlas, assets.getTexturePosition(faceUpCard, cardColor), &destination);
+    SDL_RenderPresent(renderer.get()); } void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY, int cardW) { if(cardW > 50) cardW = 50; SDL_Rect destination; destination.h = 50; destination.w = cardW; destination.x = cardX + (25 - cardW/2); destination.y = cardY;
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getTexturePosition(faceUpCard, cardColor), &destination);
     if(highlighted) {
         destination.x = x;
         destination.y = y;
         destination.w = 50;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
@@ -130,22 +136,22 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor, i
     destination.y = cardY;
 
     if(cardBackColor == Color::BLUE) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::BLUE_CARD_BACK), &destination);
     } else {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::RED_CARD_BACK), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::RED_CARD_BACK), &destination);
     }
 
     if(highlighted) {
         destination.x = x;
         destination.y = y;
         destination.w = 50;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 
 }
 
 void Display::renderButton(SDL_Rect destination, UIElement texture) {
-    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(texture), &destination);
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(texture), &destination);
 }
 
 ProcessedEvent Display::getEventFromQueue() {
@@ -200,16 +206,16 @@ void Display::renderMapOverlay(Color color) {
     destination.x = 10;
     destination.y = 10;
     if(color == Color::BLUE) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MAP_OVERLAY_TOP_SHROUDED), &destination);
         destination.y = 260;
         destination.h = 50;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_TOP_MAP), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MAP_OVERLAY_FADE_TOP_MAP), &destination);
     } else {
         destination.y = 260;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MAP_OVERLAY_BOTTOM_SHROUDED), &destination);
         destination.y = 210;
         destination.h = 50;
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MAP_OVERLAY_FADE_BOTTOM_MAP), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MAP_OVERLAY_FADE_BOTTOM_MAP), &destination);
     }
 }
 
@@ -220,9 +226,9 @@ void Display::renderWaitMsg(Color color) {
     destination.x = 510;
     destination.y = 110;
     if(color == Color::BLUE) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MSG_WAIT_FOR_BLUE), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MSG_WAIT_FOR_BLUE), &destination);
     } else {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::MSG_WAIT_FOR_RED), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::MSG_WAIT_FOR_RED), &destination);
     }
 }
 
@@ -233,18 +239,18 @@ void Display::renderVictory(GameState victory) {
     destination.x = 10;
     destination.y = 10;
 
-    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_COMMON_TOP), &destination);
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::VICTORY_COMMON_TOP), &destination);
     destination.y = 360;
-    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_COMMON_BOTTOM), &destination);
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::VICTORY_COMMON_BOTTOM), &destination);
 
     destination.h = 200;
     destination.y = 160;
     if(victory == GameState::BLUE_WINS) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_BLUE_MID), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::VICTORY_BLUE_MID), &destination);
     } else if(victory == GameState::RED_WINS) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_RED_MID), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::VICTORY_RED_MID), &destination);
     } else if(victory == GameState::TIED) {
-        SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::VICTORY_TIED), &destination);
+        SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::VICTORY_TIED), &destination);
     }
 
 }
@@ -256,7 +262,7 @@ void Display::renderAvailableMove(int x, int y) {
     destination.x = x;
     destination.y = y;
 
-    SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::AVAILABLE_MOVE), &destination);
+    SDL_RenderCopy(renderer.get(), textureAtlas.get(), assets.getUIElement(UIElement::AVAILABLE_MOVE), &destination);
 }
 
 bool Display::isIsRunning() const {
@@ -270,5 +276,7 @@ void Display::delay() {
 Uint32 Display::getTicks() {
     return SDL_GetTicks();
 }
+
+
 
 
