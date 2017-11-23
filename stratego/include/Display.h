@@ -30,8 +30,8 @@ public:
     void renderPresent();
     void clean();
     void renderField(int x, int y, bool highlighted);
-    void renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY);
-    void renderField(int x, int y, bool highlighted, Color cardBackColor, int cardX, int cardY);
+    void renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY, int cardW);
+    void renderField(int x, int y, bool highlighted, Color cardBackColor, int cardX, int cardY, int cardW);
     void renderButton(SDL_Rect destination, UIElement texture);
     void renderMapOverlay(Color color);
     void renderWaitMsg(Color color);

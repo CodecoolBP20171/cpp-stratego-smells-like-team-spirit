@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include <cmath>
+#include <FlipAnimState.h>
 #include "CardType.h"
 #include "Color.h"
 
@@ -71,9 +72,43 @@ public:
         }
         return currentY;
     }
+
+    FlipAnimState getCurrentFlipState() {
+        return currentFlipState;
+    }
+
+    void setCurrentFlipAnim(FlipAnimState state, int delay, int animLength) {
+        currentFlipState = state;
+        delayFrames = delay;
+        animFrames = animLength;
+    }
+
+    int getNextFlipAnimFrameWidth() {
+        if (delayFrames > 0) {
+            delayFrames--;
+        } else {
+            if (animFrames > -50 && currentFlipState != FlipAnimState::NOT_ANIMATED) animFrames--;
+            if (animFrames == 0) {
+                if (currentFlipState == FlipAnimState::TURNING_FACE_DOWN) isFaceDown = true;
+                if (currentFlipState == FlipAnimState::TURNING_FACE_UP) isFaceDown = false;
+            }
+            if(animFrames == -50) {
+                currentFlipState = FlipAnimState::NOT_ANIMATED;
+                animFrames = 50;
+            }
+            return abs(animFrames);
+        }
+    }
+
 protected:
     int currentX;
     int currentY;
+
+    FlipAnimState currentFlipState = FlipAnimState::NOT_ANIMATED;
+    int delayFrames = 0;
+    int animFrames = 50;
+    int animWidth;
+
     bool isFaceDown = false;
     Color color;
 };

@@ -58,10 +58,8 @@ void Display::handleEvents() {
         }
         case SDL_MOUSEBUTTONDOWN: {
             SDL_GetMouseState(&mouse_x, &mouse_y);
-            std::cout << "got click" << std::endl;
             //std::cout << "\nX position of mouse: " << mouse_x << "\nY position of mouse: " << mouse_y << std::endl;
             processedEvent = processEvent(mouse_x, mouse_y);
-            std::cout << "processed event" << std::endl;
             eventQueue.push(processedEvent);
         }
         default: break;
@@ -82,8 +80,10 @@ void Display::render()
 }
 
 void Display::clean() {
-    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(textureAtlas);
     SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
     SDL_Quit();
     std::cout << "Cleaned up after Display class..." << std::endl;
 }
@@ -104,28 +104,29 @@ void Display::renderPresent() {
     SDL_RenderPresent(renderer);
 }
 
-void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY) {
-
+void Display::renderField(int x, int y, bool highlighted, Color cardColor, CardType faceUpCard, int cardX, int cardY, int cardW) {
+    if(cardW > 50) cardW = 50;
     SDL_Rect destination;
     destination.h = 50;
-    destination.w = 50;
-    destination.x = cardX;
+    destination.w = cardW;
+    destination.x = cardX + (25 - cardW/2);
     destination.y = cardY;
 
     SDL_RenderCopy(renderer, textureAtlas, assets.getTexturePosition(faceUpCard, cardColor), &destination);
     if(highlighted) {
         destination.x = x;
         destination.y = y;
+        destination.w = 50;
         SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 }
 
-void Display::renderField(int x, int y, bool highlighted, Color cardBackColor, int cardX, int cardY) {
-
+void Display::renderField(int x, int y, bool highlighted, Color cardBackColor, int cardX, int cardY, int cardW) {
+    if(cardW > 50) cardW = 50;
     SDL_Rect destination;
     destination.h = 50;
-    destination.w = 50;
-    destination.x = cardX;
+    destination.w = cardW;
+    destination.x = cardX + (25 - cardW/2);
     destination.y = cardY;
 
     if(cardBackColor == Color::BLUE) {
@@ -137,6 +138,7 @@ void Display::renderField(int x, int y, bool highlighted, Color cardBackColor, i
     if(highlighted) {
         destination.x = x;
         destination.y = y;
+        destination.w = 50;
         SDL_RenderCopy(renderer, textureAtlas, assets.getUIElement(UIElement::FIELD_HIGHLIGHT), &destination);
     }
 

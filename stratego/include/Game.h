@@ -41,7 +41,9 @@ private:
     bool isCardAreaEmpty();
     void checkIfTied();
     void handleInitInProgress();
+    void handlePlayerMoveStart();
     void handlePlayerMoveInProgress();
+    void handleWaitPhaseStart();
     void handleWaitForNextPlayer();
     void handleVictory();
 
